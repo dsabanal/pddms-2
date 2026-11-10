@@ -2,6 +2,7 @@ import type { ColumnType, Insertable, Selectable, Updateable } from 'kysely'
 import type { ValueOf } from 'type-fest'
 import { resources, roles } from './constants'
 import type { SaleLine, SaleRecord } from './sales'
+import type { StockUnit } from './units'
 import type { WholesaleOrder, WholesalePayment } from './wholesale'
 
 export interface Database {
@@ -75,6 +76,8 @@ export interface BatchesTable {
   physicalTag: string | null
   buyPrice: number
   sellPrice: number
+  /** Selling price of one box; NULL means piece price × pieces per box. */
+  boxSellPrice: ColumnType<number | null, number | null | undefined, number | null>
   initialStock: number
   currentStock: number
   expiresAt: ColumnType<Date, string, string>
@@ -89,6 +92,7 @@ export interface DrugsTable {
   isPrescribed: ZeroOrOne
   isControlled: ZeroOrOne
   reorderLevel: ColumnType<number, number | undefined, number>
+  piecesPerBox: ColumnType<number, number | undefined, number>
   isArchived: ColumnType<ZeroOrOne, ZeroOrOne | undefined, ZeroOrOne>
 }
 
@@ -135,8 +139,13 @@ export interface PurchaseOrdersTable {
   createdBy: Id
   createdAt: ColumnType<string, string | undefined, never>
   updatedAt: ColumnType<string, string | undefined, never>
+  submittedBy: ColumnType<Id | null, Id | null | undefined, Id | null>
+  submittedAt: ColumnType<string | null, string | null | undefined, string | null>
+  cancelledBy: ColumnType<Id | null, Id | null | undefined, Id | null>
+  cancelledAt: ColumnType<string | null, string | null | undefined, string | null>
 }
 
+/** Quantities and unit cost are per order unit; one unit holds `piecesPerUnit` pieces. */
 export interface PurchaseOrderItemsTable {
   id: ColumnType<Id, Id | undefined, never>
   purchaseOrderId: Id
@@ -144,6 +153,8 @@ export interface PurchaseOrderItemsTable {
   quantity: number
   unitCost: number
   receivedQuantity: number
+  unit: ColumnType<StockUnit, StockUnit | undefined, StockUnit>
+  piecesPerUnit: ColumnType<number, number | undefined, number>
 }
 
 export interface SupplierDeliveriesTable {
@@ -156,6 +167,10 @@ export interface SupplierDeliveriesTable {
   notes: string | null
   recordedBy: Id
   createdAt: ColumnType<string, string | undefined, never>
+  /** The supplier's person who brought the goods. */
+  deliveredByName: ColumnType<string | null, string | null | undefined, never>
+  /** The staff member who checked the goods against the order. */
+  checkedByName: ColumnType<string | null, string | null | undefined, never>
 }
 
 export interface SupplierDeliveryItemsTable {
@@ -244,6 +259,7 @@ export interface ProductUpdate {
   isPrescribed?: boolean
   isControlled?: boolean
   reorderLevel?: number
+  piecesPerBox?: number
 }
 
 export type Supplier = Selectable<SuppliersTable>
@@ -263,6 +279,8 @@ export interface PurchaseOrderLine extends PurchaseOrderItem {
 export interface PurchaseOrderWithDetails extends PurchaseOrder {
   supplierName: string
   createdByName: string
+  submittedByName: string | null
+  cancelledByName: string | null
   items: PurchaseOrderLine[]
 }
 
@@ -283,6 +301,8 @@ export interface SupplierDeliveryWithDetails extends Omit<
     batchNumber: string
     quantity: number
     orderedQuantity: number
+    unit: StockUnit
+    piecesPerUnit: number
     expiresAt: string
   }>
 }

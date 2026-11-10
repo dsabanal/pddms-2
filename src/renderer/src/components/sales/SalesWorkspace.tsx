@@ -7,16 +7,19 @@ import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { expiryLabels, getExpiryStatus, isBatchSellable } from '@shared/inventory'
 import {
   calculateSale,
-  customerDiscount,
   money,
   priceToCents,
   receiptText,
   removeCartItem,
+  saleDiscount,
   setCartQuantity,
+  walkInDiscountSchema,
   type CartLine,
   type Checkout,
-  type SaleRecord
+  type SaleRecord,
+  type WalkInDiscount
 } from '@shared/sales'
+import { availableUnits, piecesLabel, unitSellPrice, unitWord, type StockUnit } from '@shared/units'
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 
 export default function SalesWorkspace(): ReactElement {
@@ -27,6 +30,8 @@ export default function SalesWorkspace(): ReactElement {
   const [selected, setSelected] = useState<number | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
   const [customerId, setCustomerId] = useState<number | null>(null)
+  // Note: A walk-in Senior/PWD sale keeps the ID details on the sale only; no profile is created.
+  const [walkIn, setWalkIn] = useState<WalkInDiscount | null>(null)
   const [cash, setCash] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -83,28 +88,44 @@ export default function SalesWorkspace(): ReactElement {
     )
   }, [products, query])
   const product = products.find((item) => item.id === selected)
+  const walkInCheck = walkIn ? walkInDiscountSchema.safeParse(walkIn) : null
+  const walkInErrors = Object.fromEntries(
+    (walkInCheck?.error?.issues ?? []).map((issue) => [String(issue.path[0]), issue.message])
+  ) as Partial<Record<keyof WalkInDiscount, string>>
+  // Note: Hold back "required" messages until the cashier starts typing; the total shows the hint.
+  const shownWalkInError = (key: keyof WalkInDiscount): string | undefined =>
+    walkIn && (walkIn[key] || (key === 'discountExpiresAt' && walkIn.discountType === 'pwd'))
+      ? walkInErrors[key]
+      : undefined
   const pricing = useMemo(() => {
     try {
       const customer = customers.find((item) => item.id === customerId) ?? null
-      return { totals: calculateSale(cart, customerDiscount(customer)), error: '' }
+      if (walkIn && !walkInDiscountSchema.safeParse(walkIn).success)
+        return {
+          totals: calculateSale(cart, 'none'),
+          error: 'Complete the walk-in Senior/PWD ID details to apply the discount.'
+        }
+      return { totals: calculateSale(cart, saleDiscount(customer, walkIn)), error: '' }
     } catch (cause) {
       return {
         totals: calculateSale([], 'none'),
         error: cause instanceof Error ? cause.message : 'Invalid eligibility.'
       }
     }
-  }, [cart, customers, customerId])
-  const changeQuantity = (batchId: number, quantity: number): void => {
+  }, [cart, customers, customerId, walkIn])
+  const changeQuantity = (batchId: number, quantity: number, unit: StockUnit): void => {
     setError('')
     try {
-      const batch = products.flatMap((item) => item.batches).find((item) => item.id === batchId)
-      if (!batch || !isBatchSellable(batch.stock, batch.expiresAt))
+      const item = products.find((value) => value.batches.some((batch) => batch.id === batchId))
+      const batch = item?.batches.find((value) => value.id === batchId)
+      if (!item || !batch || !isBatchSellable(batch.stock, batch.expiresAt))
         throw new Error('This batch is unavailable or expired.')
+      const price = unitSellPrice(unit, batch.sellPrice, batch.boxSellPrice, item.piecesPerBox)
       setCart(
         setCartQuantity(
           cart,
-          { batchId, quantity, unitPriceCents: priceToCents(batch.sellPrice) },
-          batch.stock
+          { batchId, quantity, unit, unitPriceCents: priceToCents(price) },
+          availableUnits(batch.stock, unit, item.piecesPerBox)
         )
       )
     } catch (cause) {
@@ -130,6 +151,7 @@ export default function SalesWorkspace(): ReactElement {
       }
       const values = {
         customerId,
+        walkInDiscount: walkIn,
         items: cart,
         expectedTotalCents: pricing.totals.totalCents,
         cashCents: priceToCents(Number(cash))
@@ -143,6 +165,7 @@ export default function SalesWorkspace(): ReactElement {
       setCart([])
       setCash('')
       setCustomerId(null)
+      setWalkIn(null)
       pending.current = null
       setHistory(null)
       setNotice('Payment recorded. Receipt is ready.')
@@ -176,8 +199,8 @@ export default function SalesWorkspace(): ReactElement {
             <p className="eyebrow">Daily work</p>
             <h2 className="page-title mt-0.5">Sales & dispensing</h2>
             <p className="page-subtitle">
-              Search a medicine, add it to the cart, apply a Senior Citizen or PWD discount when
-              eligible, then complete the sale.
+              Search a medicine, add pieces or boxes to the cart, apply a Senior Citizen or PWD
+              discount when eligible, then complete the sale.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -240,7 +263,15 @@ export default function SalesWorkspace(): ReactElement {
                         {sale.reference}
                         <p>{new Date(sale.createdAt).toLocaleString()}</p>
                       </td>
-                      <td className="p-3">{sale.customerName}</td>
+                      <td className="p-3">
+                        {sale.customerName}
+                        {sale.discountType !== 'none' && (
+                          <p className="text-xs text-slate-500">
+                            {sale.discountType === 'senior' ? 'Senior' : 'PWD'} ID {sale.discountId}
+                            {sale.customerId === null ? ' · walk-in' : ''}
+                          </p>
+                        )}
+                      </td>
                       <td className="p-3">{sale.cashierName}</td>
                       <td className="p-3">{money(sale.totalCents)}</td>
                       <td className="p-3">
@@ -295,7 +326,9 @@ export default function SalesWorkspace(): ReactElement {
                     onClick={() => setSelected(item.id)}
                   >
                     <span className="font-semibold break-words">{item.brandName}</span>
-                    <span className="ml-2 text-sm">{getSellableStock(item)} sellable</span>
+                    <span className="ml-2 text-sm">
+                      {piecesLabel(getSellableStock(item), item.piecesPerBox)} sellable
+                    </span>
                     <p className="text-sm text-slate-500">
                       {item.genericName} · {item.formulation} · {item.category}
                     </p>
@@ -318,10 +351,13 @@ export default function SalesWorkspace(): ReactElement {
                     >
                       <div className="min-w-0 break-words">
                         <p className="font-medium">
-                          {batch.batchNumber} · {money(priceToCents(batch.sellPrice))}
+                          {batch.batchNumber} · {money(priceToCents(batch.sellPrice))} per piece
+                          {product.piecesPerBox > 1 &&
+                            ` · ${money(priceToCents(unitSellPrice('box', batch.sellPrice, batch.boxSellPrice, product.piecesPerBox)))} per box of ${product.piecesPerBox}`}
                         </p>
                         <p className="text-sm">
-                          {batch.stock} on hand · Expires {batch.expiresAt}
+                          {piecesLabel(batch.stock, product.piecesPerBox)} on hand · Expires{' '}
+                          {batch.expiresAt}
                         </p>
                         <p
                           className={`text-sm ${isBatchSellable(batch.stock, batch.expiresAt) ? 'text-slate-500' : 'text-rose-700'}`}
@@ -329,18 +365,34 @@ export default function SalesWorkspace(): ReactElement {
                           {expiryLabels[getExpiryStatus(batch.expiresAt)]}
                         </p>
                       </div>
-                      <button
-                        className="primary-button"
-                        disabled={busy || !isBatchSellable(batch.stock, batch.expiresAt)}
-                        onClick={() =>
-                          changeQuantity(
-                            batch.id,
-                            (cart.find((item) => item.batchId === batch.id)?.quantity ?? 0) + 1
+                      <div className="flex flex-wrap gap-2">
+                        {(product.piecesPerBox > 1
+                          ? (['piece', 'box'] as const)
+                          : (['piece'] as const)
+                        ).map((unit) => {
+                          const line = cart.find((item) => item.batchId === batch.id)
+                          return (
+                            <button
+                              key={unit}
+                              className={unit === 'piece' ? 'primary-button' : 'secondary-button'}
+                              disabled={
+                                busy ||
+                                !isBatchSellable(batch.stock, batch.expiresAt) ||
+                                availableUnits(batch.stock, unit, product.piecesPerBox) < 1
+                              }
+                              onClick={() =>
+                                changeQuantity(
+                                  batch.id,
+                                  line && line.unit === unit ? line.quantity + 1 : 1,
+                                  unit
+                                )
+                              }
+                            >
+                              {unit === 'piece' ? 'Add piece' : 'Add box'}
+                            </button>
                           )
-                        }
-                      >
-                        Add one
-                      </button>
+                        })}
+                      </div>
                     </div>
                   ))}
                   {!product.batches.length && <p>No stock batches recorded.</p>}
@@ -362,6 +414,7 @@ export default function SalesWorkspace(): ReactElement {
                     value.batches.some((batch) => batch.id === line.batchId)
                   )
                   const batch = item?.batches.find((value) => value.id === line.batchId)
+                  const piecesPerBox = item?.piecesPerBox ?? 1
                   return (
                     <div
                       className="space-y-2 rounded-md border border-slate-200 p-3"
@@ -378,17 +431,38 @@ export default function SalesWorkspace(): ReactElement {
                             className="field w-24"
                             type="number"
                             min="1"
-                            max={batch?.stock}
+                            max={
+                              batch
+                                ? availableUnits(batch.stock, line.unit, piecesPerBox)
+                                : undefined
+                            }
                             step="1"
                             value={line.quantity}
                             disabled={busy}
                             onChange={(event) =>
-                              changeQuantity(line.batchId, Number(event.target.value))
+                              changeQuantity(line.batchId, Number(event.target.value), line.unit)
                             }
                           />
                         </label>
+                        {piecesPerBox > 1 && (
+                          <label className="text-sm">
+                            Sold by
+                            <select
+                              aria-label={`Unit for ${item?.brandName} batch ${batch?.batchNumber}`}
+                              className="field w-32"
+                              value={line.unit}
+                              disabled={busy}
+                              onChange={(event) =>
+                                changeQuantity(line.batchId, 1, event.target.value as StockUnit)
+                              }
+                            >
+                              <option value="piece">Piece</option>
+                              <option value="box">Box of {piecesPerBox}</option>
+                            </select>
+                          </label>
+                        )}
                         <p className="text-sm">
-                          {money(line.unitPriceCents)} each
+                          {money(line.unitPriceCents)} per {unitWord(line.unit, piecesPerBox)}
                           <br />
                           {money(line.unitPriceCents * line.quantity)}
                         </p>
@@ -408,13 +482,25 @@ export default function SalesWorkspace(): ReactElement {
                 Customer
                 <select
                   className="field"
-                  value={customerId ?? ''}
+                  value={walkIn ? 'walk-in-discount' : (customerId ?? '')}
                   disabled={busy}
-                  onChange={(event) =>
-                    setCustomerId(event.target.value ? Number(event.target.value) : null)
-                  }
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setWalkIn(
+                      value === 'walk-in-discount'
+                        ? {
+                            discountType: 'senior',
+                            holderName: '',
+                            discountId: '',
+                            discountExpiresAt: null
+                          }
+                        : null
+                    )
+                    setCustomerId(value && value !== 'walk-in-discount' ? Number(value) : null)
+                  }}
                 >
                   <option value="">Walk-in / no discount</option>
+                  <option value="walk-in-discount">Walk-in Senior Citizen / PWD (enter ID)</option>
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.fullName} · {customer.discountType}
@@ -422,8 +508,74 @@ export default function SalesWorkspace(): ReactElement {
                   ))}
                 </select>
               </label>
+              {walkIn && (
+                <fieldset className="space-y-3 rounded-md border border-slate-200 p-3">
+                  <legend className="px-1 text-sm font-semibold">Walk-in Senior/PWD ID</legend>
+                  <p className="text-xs text-slate-500">
+                    Check the physical ID. The name, ID number and expiry are saved with this sale
+                    and printed on the receipt.
+                  </p>
+                  <label className="block text-sm font-medium">
+                    ID type
+                    <select
+                      className="field"
+                      value={walkIn.discountType}
+                      disabled={busy}
+                      onChange={(event) =>
+                        setWalkIn({
+                          ...walkIn,
+                          discountType: event.target.value as WalkInDiscount['discountType']
+                        })
+                      }
+                    >
+                      <option value="senior">Senior Citizen</option>
+                      <option value="pwd">PWD</option>
+                    </select>
+                  </label>
+                  {(
+                    [
+                      ['holderName', 'Name on ID', 'text'],
+                      ['discountId', 'ID number', 'text'],
+                      [
+                        'discountExpiresAt',
+                        walkIn.discountType === 'pwd'
+                          ? 'ID expiry date'
+                          : 'ID expiry date (if printed)',
+                        'date'
+                      ]
+                    ] as const
+                  ).map(([key, label, type]) => (
+                    <label className="block text-sm font-medium" key={key}>
+                      {label}
+                      <input
+                        className={`field ${shownWalkInError(key) ? 'border-rose-400' : ''}`}
+                        type={type}
+                        maxLength={type === 'text' ? (key === 'discountId' ? 40 : 120) : undefined}
+                        value={walkIn[key] ?? ''}
+                        disabled={busy}
+                        aria-invalid={!!shownWalkInError(key)}
+                        onChange={(event) =>
+                          setWalkIn({
+                            ...walkIn,
+                            [key]:
+                              key === 'discountExpiresAt'
+                                ? event.target.value || null
+                                : event.target.value
+                          })
+                        }
+                      />
+                      {shownWalkInError(key) && (
+                        <span className="mt-1 block text-xs font-normal text-rose-700">
+                          {shownWalkInError(key)}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
               <p className="text-xs text-slate-500">
-                Registered Senior/PWD eligibility applies 12% VAT exemption, then 20% discount.
+                Senior/PWD eligibility (registered profile or walk-in ID) applies 12% VAT exemption,
+                then 20% discount.
               </p>
               {pricing.error && (
                 <p role="alert" className="text-sm text-rose-700">
@@ -491,6 +643,7 @@ export default function SalesWorkspace(): ReactElement {
                     setCart([])
                     setCash('')
                     setCustomerId(null)
+                    setWalkIn(null)
                     pending.current = null
                     setError('')
                     setNotice('Cart cancelled. No payment or stock change was recorded.')

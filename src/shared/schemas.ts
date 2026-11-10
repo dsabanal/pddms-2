@@ -12,6 +12,7 @@ import type {
   NewSupplier,
   ProductUpdate
 } from './types'
+import { piecesPerBoxSchema, stockUnitSchema } from './units'
 
 export const accountSchema = z.strictObject({
   failedAttempts: z.number().int().nonnegative(),
@@ -185,7 +186,8 @@ export const newDrugSchema = z.strictObject({
   formulation: z.string().trim().min(1).max(NAME_MAX).regex(catalogTextPattern),
   isPrescribed: z.boolean(),
   isControlled: z.boolean(),
-  reorderLevel: z.number().int().nonnegative().max(MAX_REORDER_LEVEL)
+  reorderLevel: z.number().int().nonnegative().max(MAX_REORDER_LEVEL),
+  piecesPerBox: piecesPerBoxSchema.default(1)
 }) satisfies z.ZodType<NewProduct>
 
 export const productUpdateSchema = newDrugSchema.partial() satisfies z.ZodType<ProductUpdate>
@@ -227,7 +229,9 @@ export const purchaseOrderStatusSchema = z.enum([
 const purchaseOrderLineSchema = z.strictObject({
   drugId: z.number().int().positive(),
   quantity: z.number().int().positive().max(MAX_LINE_QUANTITY),
-  unitCost: currencyAmount
+  unitCost: currencyAmount,
+  // Note: Quantity and unit cost are per box for box lines; stock is received in pieces.
+  unit: stockUnitSchema.default('piece')
 })
 
 const purchaseOrderFields = {
@@ -281,11 +285,16 @@ export const purchaseOrderStatusUpdateSchema = z.strictObject({
   status: purchaseOrderStatusSchema
 })
 
+const handlerName = (message: string): z.ZodString =>
+  z.string().trim().min(2, message).max(120, 'Name is too long.').regex(namePattern, message)
+
 export const purchaseOrderDeliverySchema = z
   .strictObject({
     requestId: z.string().uuid(),
     deliveredAt: isoDateSchema('Enter a valid delivery date.'),
     notes: z.string().trim().max(500).nullable().optional(),
+    deliveredByName: handlerName("Enter the supplier's delivery person (letters only)."),
+    checkedByName: handlerName('Enter who checked the delivery (letters only).'),
     items: z
       .array(
         z.strictObject({
@@ -296,6 +305,11 @@ export const purchaseOrderDeliverySchema = z
             (value) => value >= 0.01,
             'Selling price must be at least ₱0.01.'
           ),
+          // Note: Optional box price; without one a box sells at piece price × pieces per box.
+          boxSellPrice: currencyAmount
+            .refine((value) => value >= 0.01, 'Box price must be at least ₱0.01.')
+            .nullable()
+            .optional(),
           expiresAt: isoDateSchema('Enter a valid expiry date.')
         })
       )

@@ -345,6 +345,8 @@ if (!process.env.INVENTORY_TEST_DATABASE) {
       const delivery = (quantity, expiresAt = offsetDate(30), batchNumber = 'TEST-NEAR') => ({
         requestId: randomUUID(),
         deliveredAt: offsetDate(-10),
+        deliveredByName: 'Supplier Driver',
+        checkedByName: 'Receiving Clerk',
         notes: null,
         items: [
           {
@@ -638,6 +640,8 @@ if (!process.env.INVENTORY_TEST_DATABASE) {
       await success(channels.purchaseOrder.recordDeliveryById, next.id, {
         requestId: randomUUID(),
         deliveredAt: localDate(),
+        deliveredByName: 'Supplier Driver',
+        checkedByName: 'Receiving Clerk',
         items: [
           {
             itemId: next.items[0].id,

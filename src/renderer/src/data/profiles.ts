@@ -8,7 +8,10 @@ export interface ItemBatch {
   batchNumber: string
   supplier: string
   stock: number
+  /** Selling price of one piece. */
   sellPrice: number
+  /** Selling price of one box; null means piece price × pieces per box. */
+  boxSellPrice: number | null
   expiresAt: string
   receipts: Array<{ orderNumber: string; deliveredAt: string; quantity: number }>
 }
@@ -22,6 +25,8 @@ export interface ItemProfile {
   prescriptionRequired: boolean
   controlled: boolean
   reorderLevel: number
+  /** Pieces in one box; 1 means the product is handled by the piece only. */
+  piecesPerBox: number
   genericEquivalentIds: number[]
   batches: ItemBatch[]
 }

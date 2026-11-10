@@ -109,6 +109,8 @@ export async function findDeliveries(): Promise<SupplierDeliveryWithDetails[]> {
       'supplierDeliveries.notes',
       'supplierDeliveries.recordedBy',
       'supplierDeliveries.createdAt',
+      'supplierDeliveries.deliveredByName',
+      'supplierDeliveries.checkedByName',
       'purchaseOrders.orderNumber',
       'suppliers.organization as supplierName',
       'accounts.fullName as recordedByName'
@@ -129,6 +131,8 @@ export async function findDeliveries(): Promise<SupplierDeliveryWithDetails[]> {
       'supplierDeliveryItems.deliveryId',
       'supplierDeliveryItems.quantity',
       'purchaseOrderItems.quantity as orderedQuantity',
+      'purchaseOrderItems.unit',
+      'purchaseOrderItems.piecesPerUnit',
       'drugs.brandName',
       'drugs.genericName',
       'batches.id as batchId',
@@ -147,6 +151,8 @@ export async function findDeliveries(): Promise<SupplierDeliveryWithDetails[]> {
         batchNumber: item.physicalTag ?? `Batch ${item.batchId}`,
         quantity: item.quantity,
         orderedQuantity: item.orderedQuantity,
+        unit: item.unit,
+        piecesPerUnit: item.piecesPerUnit,
         expiresAt: String(item.expiresAt)
       }))
   }))

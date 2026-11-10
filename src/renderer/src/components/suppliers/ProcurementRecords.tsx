@@ -211,6 +211,7 @@ export default function ProcurementRecords({
                   <p className="text-xs text-slate-500">
                     Issued {date.format(new Date(invoice.invoiceDate))}
                   </p>
+                  <p className="text-xs text-slate-500">Uploaded by {invoice.uploadedByName}</p>
                   <p
                     className="mt-1 truncate text-xs text-slate-500 xl:hidden"
                     title={invoice.originalFilename}
@@ -391,6 +392,10 @@ function ReceivingReports({
               <div className="shrink-0 text-sm sm:text-right">
                 <p>{date.format(new Date(delivery.deliveredAt))}</p>
                 <p className="text-xs text-slate-500">
+                  Delivered by {delivery.deliveredByName ?? 'not recorded'} · Checked by{' '}
+                  {delivery.checkedByName ?? 'not recorded'}
+                </p>
+                <p className="text-xs text-slate-500">
                   Recorded by {delivery.recordedByName}
                   {order ? ` · ${orderStatusLabels[order.status]}` : ''}
                 </p>
@@ -409,11 +414,13 @@ function ReceivingReports({
                         {item.productName}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {item.orderedQuantity} ordered ·{' '}
+                        {item.orderedQuantity} {item.unit === 'box' ? 'box(es)' : 'pc(s)'} ordered ·{' '}
                         <span className="font-semibold text-slate-700">
                           {item.quantity} received
                         </span>{' '}
                         in this delivery
+                        {item.unit === 'box' &&
+                          ` (${item.quantity * item.piecesPerUnit} pcs into stock)`}
                       </p>
                     </div>
                     <div className="min-w-0 text-sm">
@@ -471,7 +478,14 @@ function TransactionHistory({
         type: 'Purchase order',
         reference: order.orderNumber,
         supplier: order.supplierName,
-        details: `${order.items.reduce((total, item) => total + item.quantity, 0)} units · ${orderStatusLabels[order.status]}`,
+        details: `${order.items.reduce((total, item) => total + item.quantity * item.piecesPerUnit, 0)} pcs · ${orderStatusLabels[order.status]}`,
+        handledBy: [
+          `Created by ${order.createdByName}`,
+          order.submittedByName && `submitted by ${order.submittedByName}`,
+          order.cancelledByName && `cancelled by ${order.cancelledByName}`
+        ]
+          .filter(Boolean)
+          .join(' · '),
         amount: order.totalAmount,
         icon: <FiFileText />
       })),
@@ -481,7 +495,8 @@ function TransactionHistory({
         type: 'Delivery',
         reference: delivery.orderNumber,
         supplier: delivery.supplierName,
-        details: `${delivery.items.reduce((total, item) => total + item.quantity, 0)} units · ${delivery.items.map((item) => item.batchNumber).join(', ')}`,
+        details: `${delivery.items.reduce((total, item) => total + item.quantity * item.piecesPerUnit, 0)} pcs · ${delivery.items.map((item) => item.batchNumber).join(', ')}`,
+        handledBy: `Delivered by ${delivery.deliveredByName ?? 'not recorded'} · checked by ${delivery.checkedByName ?? 'not recorded'} · recorded by ${delivery.recordedByName}`,
         amount: null,
         icon: <FiTruck />
       })),
@@ -492,6 +507,7 @@ function TransactionHistory({
         reference: invoice.invoiceNumber,
         supplier: invoice.supplierName,
         details: `${invoice.orderNumber} · ${deadlineLabels[invoice.deadlineStatus]}`,
+        handledBy: `Uploaded by ${invoice.uploadedByName}`,
         amount: invoice.amount,
         icon: <FiFilePlus />
       })),
@@ -502,13 +518,16 @@ function TransactionHistory({
         reference: payment.referenceNumber || `Payment #${payment.id}`,
         supplier: payment.supplierName,
         details: `${payment.invoiceNumber ?? payment.orderNumber} · ${payment.method}`,
+        handledBy: `Recorded by ${payment.recordedByName}`,
         amount: payment.amount,
         icon: <FiCreditCard />
       }))
     ]
     return rows
       .filter((row) =>
-        `${row.type} ${row.reference} ${row.supplier} ${row.details}`.toLowerCase().includes(query)
+        `${row.type} ${row.reference} ${row.supplier} ${row.details} ${row.handledBy}`
+          .toLowerCase()
+          .includes(query)
       )
       .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
   }, [
@@ -545,7 +564,10 @@ function TransactionHistory({
               </td>
               <td className="px-5 py-4 font-medium">{transaction.reference}</td>
               <td className="px-5 py-4">{transaction.supplier}</td>
-              <td className="px-5 py-4 text-slate-600">{transaction.details}</td>
+              <td className="px-5 py-4 text-slate-600">
+                {transaction.details}
+                <p className="mt-1 text-xs text-slate-500">{transaction.handledBy}</p>
+              </td>
               <td className="px-5 py-4 text-right font-semibold">
                 {transaction.amount === null ? '—' : currency.format(transaction.amount)}
               </td>

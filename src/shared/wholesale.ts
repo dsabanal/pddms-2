@@ -1,6 +1,6 @@
 import z from 'zod'
 import { localDate } from './inventory'
-import { cartLineSchema, centsSchema, money, type SaleLine } from './sales'
+import { cartLineSchema, centsSchema, lineText, money, type SaleLine } from './sales'
 import { isoDateSchema } from './schemas'
 
 export class WholesaleError extends Error {}
@@ -24,11 +24,27 @@ export const wholesaleOrderSchema = z
     path: ['dueDate'],
     message: 'The payment due date cannot be before the order date (today).'
   })
+// Note: Names of people outside the system (drivers, client staff) are typed, not picked from accounts.
+const personName = z
+  .string()
+  .trim()
+  .max(120, 'Name is too long.')
+  .regex(
+    /^(\p{L}[\p{L} .,'-]*)?$/u,
+    'Use letters, spaces, periods, commas, apostrophes or hyphens.'
+  )
+const requiredPersonName = (message: string): z.ZodString => personName.min(2, message)
 export const wholesaleScheduleSchema = z.strictObject({
   orderId: id,
   scheduledDate: isoDateSchema('Enter a valid delivery date.'),
   deliveryAddress: z.string().trim().min(1).max(500),
-  deliveryNotes: z.string().trim().max(500)
+  deliveryNotes: z.string().trim().max(500),
+  driverName: personName.default('')
+})
+export const wholesaleDeliverSchema = z.strictObject({
+  orderId: id,
+  driverName: requiredPersonName('Enter who delivered the order (driver or courier).'),
+  receivedByName: requiredPersonName('Enter who received the order at the client.')
 })
 export const wholesalePaymentSchema = z
   .strictObject({
@@ -51,7 +67,8 @@ export const wholesaleListSchema = z.strictObject({
   overdue: z.boolean().default(false)
 })
 export type WholesaleDraft = z.infer<typeof wholesaleOrderSchema>
-export type WholesaleSchedule = z.infer<typeof wholesaleScheduleSchema>
+export type WholesaleSchedule = z.input<typeof wholesaleScheduleSchema>
+export type WholesaleDelivery = z.infer<typeof wholesaleDeliverSchema>
 export type WholesalePaymentInput = z.infer<typeof wholesalePaymentSchema>
 export type WholesaleFilter = z.input<typeof wholesaleListSchema>
 export interface WholesaleOrder {
@@ -73,7 +90,16 @@ export interface WholesaleOrder {
   deliveryAddress: string
   deliveryNotes: string
   deliveredAt: string | null
+  /** Account that recorded the delivery in the system. */
   deliveredByName: string | null
+  scheduledByName: string | null
+  scheduledAt: string | null
+  /** Driver or courier who brought the goods to the client. */
+  driverName: string | null
+  /** Person at the client who received the goods. */
+  receivedByName: string | null
+  cancelledByName: string | null
+  cancelledAt: string | null
 }
 export interface WholesalePayment extends Omit<WholesalePaymentInput, 'paymentId'> {
   id: number
@@ -89,11 +115,16 @@ export interface Receivable {
   deadlineStatus: 'paid' | 'overdue' | 'upcoming'
 }
 export type WholesaleSummary = Omit<WholesaleOrder, 'requestFingerprint'> & {
+  createdByName: string
   receivable?: Receivable
+}
+export type WholesalePaymentDetails = WholesalePayment & {
+  recordedByName: string
+  updatedByName: string
 }
 export type WholesaleDetails = WholesaleSummary & {
   items: SaleLine[]
-  payments?: WholesalePayment[]
+  payments?: WholesalePaymentDetails[]
 }
 export function receivable(
   total: number,
@@ -123,15 +154,14 @@ export function deliveryReceiptText(order: WholesaleDetails): string {
     `Delivery address: ${order.deliveryAddress}`,
     `Delivered: ${new Date(order.deliveredAt).toLocaleString('en-PH')}`,
     `Status: ${order.status}`,
-    ...order.items.map(
-      (item) =>
-        `${item.productName}\nBatch ${item.batchNumber} | Expiry ${item.expiresAt}\n${item.quantity} × ${money(item.unitPriceCents)} = ${money(item.quantity * item.unitPriceCents)}`
-    ),
+    ...order.items.map((item) => lineText(item)),
     `Order total: ${money(order.totalCents)}`,
     `Delivery notes: ${order.deliveryNotes || '—'}`,
-    `Recorded by: ${order.deliveredByName}`,
-    'Received by / signature: ____________________',
-    'Delivered by / signature: ____________________',
+    `Order created by: ${order.createdByName}`,
+    `Scheduled by: ${order.scheduledByName ?? 'Not recorded'}`,
+    `Delivery recorded by: ${order.deliveredByName}`,
+    `Delivered by: ${order.driverName ?? 'Not recorded'} / signature: ____________________`,
+    `Received by: ${order.receivedByName ?? 'Not recorded'} / signature: ____________________`,
     'Proof of delivery — not a payment receipt.'
   ].join('\n\n')
 }

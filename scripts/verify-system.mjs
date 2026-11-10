@@ -300,6 +300,8 @@ if (!process.env.SYSTEM_TEST_PHASE) {
       const delivery = {
         requestId: randomUUID(),
         deliveredAt: localDate(),
+        deliveredByName: 'Supplier Driver',
+        checkedByName: 'Receiving Clerk',
         items: [
           {
             itemId: order.items[0].id,

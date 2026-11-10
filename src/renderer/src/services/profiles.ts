@@ -49,8 +49,13 @@ const mapProduct = (
   ...product,
   prescriptionRequired: product.isPrescribed ?? product.prescriptionRequired,
   controlled: product.isControlled ?? product.controlled,
+  piecesPerBox: product.piecesPerBox ?? 1,
   genericEquivalentIds: [],
-  batches: product.batches.map((batch) => ({ ...batch, expiresAt: String(batch.expiresAt) }))
+  batches: product.batches.map((batch) => ({
+    ...batch,
+    boxSellPrice: batch.boxSellPrice ?? null,
+    expiresAt: String(batch.expiresAt)
+  }))
 })
 
 export async function getCustomers(): Promise<CustomerProfile[]> {
@@ -110,7 +115,8 @@ export async function addProduct(product: ItemDraft): Promise<ItemProfile> {
     formulation: product.formulation,
     isPrescribed: product.prescriptionRequired,
     isControlled: product.controlled,
-    reorderLevel: product.reorderLevel
+    reorderLevel: product.reorderLevel,
+    piecesPerBox: product.piecesPerBox
   })
   const result = (await window.electron.ipcRenderer.invoke(channels.product.createOne, {
     ...payload
@@ -129,7 +135,8 @@ export async function updateProduct(id: number, product: ItemDraft): Promise<Ite
     formulation: product.formulation,
     isPrescribed: product.prescriptionRequired,
     isControlled: product.controlled,
-    reorderLevel: product.reorderLevel
+    reorderLevel: product.reorderLevel,
+    piecesPerBox: product.piecesPerBox
   })
   const result = (await window.electron.ipcRenderer.invoke(channels.product.updateOneById, id, {
     ...payload
