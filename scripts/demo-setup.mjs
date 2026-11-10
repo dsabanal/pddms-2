@@ -23,6 +23,11 @@ import { mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+const handoff = (orderId) => ({
+  orderId,
+  driverName: 'Demo Driver',
+  receivedByName: 'Demo Clinic Pharmacist'
+})
 
 export const demoAccounts = [
   { role: 'master', fullName: 'Demo Admin', username: 'demo.admin', password: 'DemoAdmin#2026' },
@@ -272,6 +277,8 @@ async function seed() {
       call(channels.purchaseOrder.recordDeliveryById, order.id, {
         requestId: randomUUID(),
         deliveredAt,
+        deliveredByName: 'Demo Courier',
+        checkedByName: 'Demo Receiving Clerk',
         notes: null,
         items: lines.map(([key, receivedQuantity, batchNumber, sellPrice, expiresAt]) => ({
           itemId: order.items.find((item) => item.drugId === products[key].id).id,
@@ -425,7 +432,7 @@ async function seed() {
       deliveryAddress: 'Sunrise Community Clinic, Demo Avenue, General Santos City',
       deliveryNotes: 'Receive at the clinic pharmacy counter'
     })
-    await call(channels.wholesale.deliver, deliveredOrderId)
+    await call(channels.wholesale.deliver, handoff(deliveredOrderId))
     await wholesale([line('LSD-2408', 30)], day(30), 'Awaiting delivery schedule')
 
     // Retail sales by the cashier, including Senior Citizen and PWD discounts.

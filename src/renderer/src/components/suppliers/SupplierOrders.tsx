@@ -20,9 +20,11 @@ import {
   type ProcurementTab,
   type PurchaseOrderRecord
 } from '@renderer/data/supplierOrders'
+import { useAccount } from '@renderer/hooks/useAccount'
 import { useSupplierOrders } from '@renderer/hooks/useSupplierOrders'
-import { localDate } from '@shared/inventory'
+import { EXPIRY_WARNING_DAYS, getExpiryStatus, localDate } from '@shared/inventory'
 import type { Supplier } from '@shared/types'
+import type { StockUnit } from '@shared/units'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useRef, useState, type FormEvent, type ReactElement, type ReactNode } from 'react'
 import {
@@ -48,6 +50,15 @@ const toNumber = (value: string): number => (value.trim() === '' ? Number.NaN : 
 
 const remaining = (item: PurchaseOrderRecord['items'][number]): number =>
   Math.max(item.quantity - item.receivedQuantity, 0)
+
+/** "3 boxes" / "5 pcs" in the line's own order unit. */
+const units = (count: number, item: { unit: StockUnit }): string =>
+  item.unit === 'box'
+    ? `${count} box${count === 1 ? '' : 'es'}`
+    : `${count} pc${count === 1 ? '' : 's'}`
+
+const unitName = (item: { unit: StockUnit; piecesPerUnit: number }): string =>
+  item.unit === 'box' ? `box of ${item.piecesPerUnit}` : 'piece'
 
 const canReceive = (order: PurchaseOrderRecord): boolean =>
   ['submitted', 'partially_received'].includes(order.status) &&
@@ -690,6 +701,28 @@ function OrderTable({
                     </p>
                   )}
                   <p className="mt-1 text-xs font-semibold">{currency.format(order.totalAmount)}</p>
+                  <dl className="mt-2 space-y-0.5 text-xs text-slate-500">
+                    <div>
+                      <dt className="inline">Created by </dt>
+                      <dd className="inline text-slate-700">{order.createdByName}</dd>
+                    </div>
+                    {order.status !== 'draft' && (
+                      <div>
+                        <dt className="inline">Submitted by </dt>
+                        <dd className="inline text-slate-700">
+                          {order.submittedByName ?? 'Not recorded'}
+                        </dd>
+                      </div>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <div>
+                        <dt className="inline">Cancelled by </dt>
+                        <dd className="inline text-slate-700">
+                          {order.cancelledByName ?? 'Not recorded'}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
                 </td>
                 <td className="min-w-0 px-4 py-4">
                   <p className="truncate" title={order.supplierName}>
@@ -710,7 +743,9 @@ function OrderTable({
                           {item.productName}
                         </span>
                         <span className="block text-xs text-slate-500 tabular-nums">
-                          {item.quantity} ordered · {item.receivedQuantity} received ·{' '}
+                          {units(item.quantity, item)} ordered
+                          {item.unit === 'box' ? ` (×${item.piecesPerUnit} pcs)` : ''} ·{' '}
+                          {item.receivedQuantity} received ·{' '}
                           <span
                             className={
                               remaining(item) > 0 && order.status !== 'cancelled'
@@ -833,8 +868,7 @@ function AwaitingDelivery({
               <p className="truncate font-semibold">{order.orderNumber}</p>
               <p className="truncate text-sm text-slate-600">{order.supplierName}</p>
               <p className="mt-1 text-xs text-slate-500">
-                {order.items.reduce((total, item) => total + remaining(item), 0)} unit(s) remaining
-                across {order.items.filter((item) => remaining(item) > 0).length} line(s)
+                {order.items.filter((item) => remaining(item) > 0).length} line(s) still to receive
                 {order.expectedAt ? ` · expected ${date.format(new Date(order.expectedAt))}` : ''}
               </p>
             </div>
@@ -933,39 +967,47 @@ function SupplierDialog({
         <RequiredNote />
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Organization" required error={errors.organization}>
-            {input('organization', { placeholder: 'e.g. MedSupply Distribution' })}
+            {input('organization', { placeholder: 'e.g. MedSupply Distribution', maxLength: 120 })}
           </FormField>
           <FormField label="Contact person" required error={errors.person}>
-            {input('person', { placeholder: 'e.g. Juan Dela Cruz' })}
+            {input('person', { placeholder: 'e.g. Juan Dela Cruz', maxLength: 120 })}
           </FormField>
           <FormField
             label="Mobile phone"
             required
-            hint="11 digits starting with 09."
+            hint="e.g. 09171234567 or +63 917 123 4567."
             error={errors.phone}
           >
-            {input('phone', { placeholder: '09171234567', inputMode: 'numeric', maxLength: 11 })}
+            {input('phone', { placeholder: '09171234567', inputMode: 'tel', maxLength: 20 })}
           </FormField>
           <FormField label="Telephone" error={errors.telephone}>
-            {input('telephone', { placeholder: 'e.g. (082) 123 4567', inputMode: 'tel' })}
+            {input('telephone', {
+              placeholder: 'e.g. (082) 123 4567',
+              inputMode: 'tel',
+              maxLength: 20
+            })}
           </FormField>
           <FormField label="Email" error={errors.email} className="sm:col-span-2">
-            {input('email', { type: 'email', placeholder: 'e.g. orders@supplier.ph' })}
+            {input('email', {
+              type: 'email',
+              placeholder: 'e.g. orders@supplier.ph',
+              maxLength: 254
+            })}
           </FormField>
           <FormField label="Street" required error={errors.street}>
-            {input('street', { placeholder: 'e.g. 123 Rizal Street' })}
+            {input('street', { placeholder: 'e.g. 123 Rizal Street', maxLength: 500 })}
           </FormField>
           <FormField label="City" required error={errors.city}>
-            {input('city', { placeholder: 'e.g. Davao City' })}
+            {input('city', { placeholder: 'e.g. Davao City', maxLength: 100 })}
           </FormField>
           <FormField label="Province" required error={errors.province}>
-            {input('province', { placeholder: 'e.g. Davao del Sur' })}
+            {input('province', { placeholder: 'e.g. Davao del Sur', maxLength: 100 })}
           </FormField>
           <FormField label="Postal code" required hint="4 digits." error={errors.postalCode}>
             {input('postalCode', { placeholder: '8000', inputMode: 'numeric', maxLength: 4 })}
           </FormField>
           <FormField label="Country" required error={errors.country}>
-            {input('country')}
+            {input('country', { maxLength: 100 })}
           </FormField>
         </div>
         <FormError message={error} />
@@ -985,6 +1027,7 @@ interface OrderLineDraft {
   drugId: string
   quantity: string
   unitCost: string
+  unit: StockUnit
 }
 
 function OrderDialog({
@@ -1009,9 +1052,10 @@ function OrderDialog({
           key: nextLineKey++,
           drugId: String(item.drugId),
           quantity: String(item.quantity),
-          unitCost: String(item.unitCost)
+          unitCost: String(item.unitCost),
+          unit: item.unit
         }))
-      : [{ key: nextLineKey++, drugId: '', quantity: '', unitCost: '' }]
+      : [{ key: nextLineKey++, drugId: '', quantity: '', unitCost: '', unit: 'piece' }]
   )
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -1048,7 +1092,8 @@ function OrderDialog({
         items: lines.map((line) => ({
           drugId: Number(line.drugId),
           quantity: toNumber(line.quantity),
-          unitCost: toNumber(line.unitCost)
+          unitCost: toNumber(line.unitCost),
+          unit: line.unit
         }))
       })
     } catch (cause) {
@@ -1138,7 +1183,8 @@ function OrderDialog({
                 Products ordered<span className="ml-0.5 text-rose-600">*</span>
               </p>
               <p className="text-xs text-slate-500">
-                Quantity in selling units, at least 1. Unit cost is the supplier price per unit.
+                Order by the piece, or by the box for products with pieces per box set. Unit cost is
+                the supplier price per piece or per box.
               </p>
             </div>
             <button
@@ -1147,7 +1193,7 @@ function OrderDialog({
               onClick={() =>
                 setLines((current) => [
                   ...current,
-                  { key: nextLineKey++, drugId: '', quantity: '', unitCost: '' }
+                  { key: nextLineKey++, drugId: '', quantity: '', unitCost: '', unit: 'piece' }
                 ])
               }
               disabled={products.length === 0}
@@ -1155,9 +1201,10 @@ function OrderDialog({
               <FiPlus /> Add product
             </button>
           </div>
-          <div className="hidden grid-cols-[minmax(0,1fr)_7rem_8rem_7rem_2.5rem] gap-2 px-2 pb-1 text-xs font-medium text-slate-500 sm:grid">
+          <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_8rem_7rem_2.5rem] gap-2 px-2 pb-1 text-xs font-medium text-slate-500 sm:grid">
             <span>Product</span>
             <span>Quantity</span>
+            <span>Unit</span>
             <span>Unit cost (₱)</span>
             <span className="text-right">Line total</span>
             <span />
@@ -1169,15 +1216,20 @@ function OrderDialog({
                 errors[`items.${index}.quantity`] ||
                 errors[`items.${index}.unitCost`]
               const lineTotal = Number(line.quantity) * Number(line.unitCost)
+              const piecesPerBox =
+                products.find((product) => String(product.id) === line.drugId)?.piecesPerBox ?? 1
               return (
                 <div key={line.key} className="rounded-md border border-slate-200 bg-white p-2">
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_7rem_2.5rem] sm:items-center">
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_8rem_7rem_2.5rem] sm:items-center">
                     <select
                       className="field mt-0"
                       aria-label={`Product for line ${index + 1}`}
                       aria-invalid={errors[`items.${index}.drugId`] ? true : undefined}
                       value={line.drugId}
-                      onChange={(event) => updateLine(index, 'drugId', event.target.value)}
+                      onChange={(event) => {
+                        updateLine(index, 'drugId', event.target.value)
+                        updateLine(index, 'unit', 'piece')
+                      }}
                     >
                       <option value="">Select product</option>
                       {products.map((product) => (
@@ -1198,6 +1250,21 @@ function OrderDialog({
                       value={line.quantity}
                       onChange={(event) => updateLine(index, 'quantity', event.target.value)}
                     />
+                    <select
+                      className="field mt-0"
+                      aria-label={`Order unit for line ${index + 1}`}
+                      value={line.unit}
+                      disabled={piecesPerBox <= 1}
+                      title={
+                        piecesPerBox <= 1
+                          ? 'Set pieces per box on the product to order by the box.'
+                          : undefined
+                      }
+                      onChange={(event) => updateLine(index, 'unit', event.target.value)}
+                    >
+                      <option value="piece">Pieces</option>
+                      {piecesPerBox > 1 && <option value="box">Boxes of {piecesPerBox}</option>}
+                    </select>
                     <input
                       min="0"
                       step="0.01"
@@ -1261,6 +1328,7 @@ interface ReceiveLine {
   receivedQuantity: string
   batchNumber: string
   sellPrice: string
+  boxSellPrice: string
   expiresAt: string
 }
 
@@ -1280,6 +1348,10 @@ function ReceiveDialog({
   const [requestId] = useState(() => crypto.randomUUID())
   const submitting = useRef(false)
   const [notes, setNotes] = useState('')
+  const { account } = useAccount()
+  const [deliveredByName, setDeliveredByName] = useState('')
+  // Note: Defaults to the person recording; change it when someone else checked the goods.
+  const [checkedByName, setCheckedByName] = useState(account?.fullName ?? '')
   const openItems = order.items.filter((item) => remaining(item) > 0)
   const [lines, setLines] = useState<Record<number, ReceiveLine>>(() =>
     Object.fromEntries(
@@ -1287,7 +1359,7 @@ function ReceiveDialog({
         // Note: Suggest the product's current selling price; staff confirm it per delivery.
         const latest = products
           .find((product) => product.id === item.drugId)
-          ?.batches.reduce<{ id: number; sellPrice: number } | null>(
+          ?.batches.reduce<{ id: number; sellPrice: number; boxSellPrice: number | null } | null>(
             (best, batch) => (!best || batch.id > best.id ? batch : best),
             null
           )
@@ -1297,6 +1369,7 @@ function ReceiveDialog({
             receivedQuantity: String(remaining(item)),
             batchNumber: '',
             sellPrice: latest ? String(latest.sellPrice) : '',
+            boxSellPrice: latest?.boxSellPrice != null ? String(latest.boxSellPrice) : '',
             expiresAt: ''
           }
         ]
@@ -1329,7 +1402,8 @@ function ReceiveDialog({
       [item.id]: {
         ...current[item.id],
         expiresAt: match.expiresAt.slice(0, 10),
-        sellPrice: String(match.sellPrice)
+        sellPrice: String(match.sellPrice),
+        boxSellPrice: match.boxSellPrice != null ? String(match.boxSellPrice) : ''
       }
     }))
     setErrors((current) => ({
@@ -1351,7 +1425,7 @@ function ReceiveDialog({
         nextErrors[`${item.id}.receivedQuantity`] = 'Enter a whole number of 0 or more.'
       else if (quantity > remaining(item))
         nextErrors[`${item.id}.receivedQuantity`] =
-          `Only ${remaining(item)} remaining. Over-receiving is not allowed.`
+          `Only ${units(remaining(item), item)} remaining. Over-receiving is not allowed.`
       if (quantity > 0) {
         // Note: Plain-language prompts for blanks; the shared schema still checks formats.
         const line = lines[item.id]
@@ -1360,9 +1434,18 @@ function ReceiveDialog({
         if (!line.expiresAt)
           nextErrors[`${item.id}.expiresAt`] = 'Enter the expiry date printed on the package.'
         if (!line.sellPrice.trim())
-          nextErrors[`${item.id}.sellPrice`] = 'Enter the selling price per unit.'
+          nextErrors[`${item.id}.sellPrice`] = 'Enter the selling price per piece.'
+        else if (Number(line.sellPrice) < item.unitCost / item.piecesPerUnit - 0.000001)
+          nextErrors[`${item.id}.sellPrice`] =
+            `The selling price cannot be lower than the unit cost of ${currency.format(item.unitCost / item.piecesPerUnit)} per piece.`
       }
     }
+    if (deliveredAt < order.orderedAt.slice(0, 10))
+      nextErrors.deliveredAt = 'The delivery date cannot be before the purchase order date.'
+    if (deliveredByName.trim().length < 2)
+      nextErrors.deliveredByName = "Enter the supplier's delivery person."
+    if (checkedByName.trim().length < 2)
+      nextErrors.checkedByName = 'Enter who checked the delivery.'
     const deliveredLines = delivered.filter((item) => Number(lines[item.id].receivedQuantity) > 0)
     if (Object.keys(nextErrors).length === 0 && deliveredLines.length === 0) {
       setError('Enter the delivered quantity for at least one product.')
@@ -1381,11 +1464,16 @@ function ReceiveDialog({
         requestId,
         deliveredAt,
         notes: notes.trim() || null,
+        deliveredByName: deliveredByName.trim(),
+        checkedByName: checkedByName.trim(),
         items: deliveredLines.map((item) => ({
           itemId: item.id,
           receivedQuantity: Number(lines[item.id].receivedQuantity),
           batchNumber: lines[item.id].batchNumber.trim(),
           sellPrice: toNumber(lines[item.id].sellPrice),
+          boxSellPrice: lines[item.id].boxSellPrice.trim()
+            ? toNumber(lines[item.id].boxSellPrice)
+            : null,
           expiresAt: lines[item.id].expiresAt
         }))
       })
@@ -1393,7 +1481,9 @@ function ReceiveDialog({
       const result = splitErrors(cause, 'Unable to record the delivery.', (path, field) => {
         const match = /^items\.(\d+)\.(\w+)$/.exec(path)
         if (match) return `${deliveredLines[Number(match[1])]?.id}.${match[2]}`
-        return field === 'deliveredAt' || field === 'notes' ? field : null
+        return ['deliveredAt', 'notes', 'deliveredByName', 'checkedByName'].includes(field)
+          ? field
+          : null
       })
       setErrors(result.fields)
       setError(result.form)
@@ -1402,11 +1492,21 @@ function ReceiveDialog({
     }
   }
 
-  const cell = (itemId: number, field: keyof ReceiveLine, control: ReactElement): ReactElement => (
+  const cell = (
+    itemId: number,
+    field: keyof ReceiveLine,
+    control: ReactElement,
+    warning?: string
+  ): ReactElement => (
     <td className="px-2 py-2 align-top">
       {control}
       {errors[`${itemId}.${field}`] && (
         <p className="mt-1 text-xs font-medium text-rose-700">{errors[`${itemId}.${field}`]}</p>
+      )}
+      {warning && (
+        <p role="status" className="mt-1 text-xs font-medium text-amber-700">
+          {warning}
+        </p>
       )}
     </td>
   )
@@ -1426,6 +1526,7 @@ function ReceiveDialog({
             <input
               type="date"
               className="field"
+              min={order.orderedAt.slice(0, 10)}
               max={localDate()}
               value={deliveredAt}
               onChange={(event) => {
@@ -1447,9 +1548,43 @@ function ReceiveDialog({
               onChange={(event) => setNotes(event.target.value)}
             />
           </FormField>
+          <FormField
+            label="Delivered by (supplier)"
+            required
+            hint="The supplier's driver or delivery person who handed over the goods."
+            error={errors.deliveredByName}
+          >
+            <input
+              className="field"
+              maxLength={120}
+              value={deliveredByName}
+              aria-invalid={errors.deliveredByName ? true : undefined}
+              onChange={(event) => {
+                setDeliveredByName(event.target.value)
+                setErrors((current) => ({ ...current, deliveredByName: '' }))
+              }}
+            />
+          </FormField>
+          <FormField
+            label="Checked by"
+            required
+            hint={`Who counted and inspected the goods. You (${account?.fullName ?? 'signed-in user'}) are recorded as the person entering this delivery.`}
+            error={errors.checkedByName}
+          >
+            <input
+              className="field"
+              maxLength={120}
+              value={checkedByName}
+              aria-invalid={errors.checkedByName ? true : undefined}
+              onChange={(event) => {
+                setCheckedByName(event.target.value)
+                setErrors((current) => ({ ...current, checkedByName: '' }))
+              }}
+            />
+          </FormField>
         </div>
         <div className="overflow-x-auto rounded-md border border-slate-200">
-          <table className="w-full min-w-[880px] text-sm">
+          <table className="w-full min-w-[1000px] text-sm">
             <thead className="bg-slate-50 text-left text-xs text-slate-500">
               <tr>
                 <th className="px-3 py-2">Product</th>
@@ -1466,28 +1601,40 @@ function ReceiveDialog({
                   Expiry date<span className="text-rose-600">*</span>
                 </th>
                 <th className="w-32 px-2 py-2">
-                  Selling price (₱)<span className="text-rose-600">*</span>
+                  Price per piece (₱)<span className="text-rose-600">*</span>
                 </th>
+                <th className="w-32 px-2 py-2">Price per box (₱)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {openItems.map((item) => {
                 const line = lines[item.id]
                 const active = Number(line.receivedQuantity) > 0
+                const piecesPerBox =
+                  products.find((product) => product.id === item.drugId)?.piecesPerBox ?? 1
                 return (
                   <tr key={item.id} className={active ? '' : 'bg-slate-50/70 text-slate-500'}>
                     <td className="px-3 py-2 align-top">
                       <p className="font-medium text-slate-800">{item.productName}</p>
                       <p className="text-xs text-slate-500">
-                        Unit cost {currency.format(item.unitCost)}
+                        Cost {currency.format(item.unitCost)} per {unitName(item)}
+                        {item.unit === 'box' &&
+                          ` (${currency.format(item.unitCost / item.piecesPerUnit)} per piece)`}
                       </p>
                     </td>
-                    <td className="px-2 py-2 text-right align-top tabular-nums">{item.quantity}</td>
                     <td className="px-2 py-2 text-right align-top tabular-nums">
-                      {item.receivedQuantity}
+                      {units(item.quantity, item)}
+                    </td>
+                    <td className="px-2 py-2 text-right align-top tabular-nums">
+                      {units(item.receivedQuantity, item)}
                     </td>
                     <td className="px-2 py-2 text-right align-top font-semibold tabular-nums">
-                      {remaining(item)}
+                      {units(remaining(item), item)}
+                      {item.unit === 'box' && (
+                        <p className="text-xs font-normal text-slate-500">
+                          = {remaining(item) * item.piecesPerUnit} pcs
+                        </p>
+                      )}
                     </td>
                     {cell(
                       item.id,
@@ -1542,14 +1689,19 @@ function ReceiveDialog({
                         aria-invalid={errors[`${item.id}.expiresAt`] ? true : undefined}
                         value={line.expiresAt}
                         onChange={(event) => updateLine(item.id, 'expiresAt', event.target.value)}
-                      />
+                      />,
+                      line.expiresAt &&
+                        !errors[`${item.id}.expiresAt`] &&
+                        getExpiryStatus(line.expiresAt) === 'near-expiry'
+                        ? `Near expiry: within ${EXPIRY_WARNING_DAYS} days. Check before accepting.`
+                        : undefined
                     )}
                     {cell(
                       item.id,
                       'sellPrice',
                       <input
                         type="number"
-                        min="0"
+                        min={item.unitCost / item.piecesPerUnit}
                         step="0.01"
                         inputMode="decimal"
                         className="field mt-0"
@@ -1557,6 +1709,31 @@ function ReceiveDialog({
                         aria-invalid={errors[`${item.id}.sellPrice`] ? true : undefined}
                         value={line.sellPrice}
                         onChange={(event) => updateLine(item.id, 'sellPrice', event.target.value)}
+                      />
+                    )}
+                    {cell(
+                      item.id,
+                      'boxSellPrice',
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="field mt-0"
+                        disabled={piecesPerBox <= 1}
+                        placeholder={
+                          piecesPerBox <= 1
+                            ? 'Piece only'
+                            : line.sellPrice
+                              ? (Number(line.sellPrice) * piecesPerBox).toFixed(2)
+                              : 'Optional'
+                        }
+                        aria-label={`Box selling price for ${item.productName}`}
+                        aria-invalid={errors[`${item.id}.boxSellPrice`] ? true : undefined}
+                        value={line.boxSellPrice}
+                        onChange={(event) =>
+                          updateLine(item.id, 'boxSellPrice', event.target.value)
+                        }
                       />
                     )}
                   </tr>
@@ -1567,9 +1744,11 @@ function ReceiveDialog({
         </div>
         <p className="text-xs text-slate-500">
           Set “Received now” to 0 for products that did not arrive; they stay open for a later
-          delivery. Batch number, expiry date and selling price are required for every product you
-          receive. Picking an existing batch of this product fills in its expiry date and price;
-          stock is added to that batch only when product, supplier, cost, price and expiry match.
+          delivery. Batch number, expiry date and price per piece are required for every product you
+          receive. Boxes received are added to stock as pieces. Leave the box price empty to sell a
+          box at the piece price × pieces per box. Picking an existing batch of this product fills
+          in its expiry date and price; stock is added to that batch only when product, supplier,
+          cost, price and expiry match.
         </p>
         <FormError message={error} />
         <DialogActions close={close} saving={saving} label="Receive products" />

@@ -157,6 +157,8 @@ if (!process.env.SALES_TEST_PHASE) {
       await ok(channels.purchaseOrder.recordDeliveryById, order.id, {
         requestId: randomUUID(),
         deliveredAt: localDate(),
+        deliveredByName: 'Supplier Driver',
+        checkedByName: 'Receiving Clerk',
         items: order.items.map((item, index) => ({
           itemId: item.id,
           receivedQuantity: 20,

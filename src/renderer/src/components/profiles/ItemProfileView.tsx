@@ -8,6 +8,8 @@ import {
 import { useAccount } from '@renderer/hooks/useAccount'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { expiryLabels, getExpiryStatus } from '@shared/inventory'
+import { MAX_REORDER_LEVEL } from '@shared/schemas'
+import { piecesLabel, unitSellPrice } from '@shared/units'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent, type ReactElement } from 'react'
 import { FiArrowLeft, FiEdit2, FiPackage, FiTrash2, FiX } from 'react-icons/fi'
@@ -25,6 +27,7 @@ const emptyItem: ItemProfile = {
   prescriptionRequired: false,
   controlled: false,
   reorderLevel: 0,
+  piecesPerBox: 1,
   genericEquivalentIds: [],
   batches: []
 }
@@ -82,7 +85,8 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
           formulation,
           prescriptionRequired: draft.prescriptionRequired,
           controlled: draft.controlled,
-          reorderLevel: draft.reorderLevel
+          reorderLevel: draft.reorderLevel,
+          piecesPerBox: draft.piecesPerBox
         })
         await navigate({ to: '/items/$itemId', params: { itemId: String(saved.id) } })
       } catch (cause) {
@@ -180,7 +184,8 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
         formulation,
         prescriptionRequired: draft.prescriptionRequired,
         controlled: draft.controlled,
-        reorderLevel: draft.reorderLevel
+        reorderLevel: draft.reorderLevel,
+        piecesPerBox: draft.piecesPerBox
       })
       setDraft({ ...saved, batches: item.batches })
       setIsEditing(false)
@@ -310,9 +315,12 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
         <section className="grid gap-5 md:grid-cols-3">
           <Metric
             label="Stock on hand / sellable"
-            value={`${stock} / ${getSellableStock(item)} units`}
+            value={`${piecesLabel(stock, item.piecesPerBox)} / ${getSellableStock(item)} sellable`}
           />
-          <Metric label="Reorder level" value={`${item.reorderLevel} units`} />
+          <Metric
+            label="Reorder level"
+            value={`${item.reorderLevel} pieces${item.piecesPerBox > 1 ? ` · ${item.piecesPerBox} pieces per box` : ' · sold by the piece'}`}
+          />
           <Metric
             label="Current price"
             value={item.batches[0] ? currency.format(item.batches[0].sellPrice) : 'Unavailable'}
@@ -343,15 +351,30 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                         {batch.receipts.map((receipt, index) => (
                           <p key={index} className="mt-1 text-xs font-normal text-slate-500">
                             {receipt.deliveredAt} · {receipt.orderNumber} · {receipt.quantity}{' '}
-                            received
+                            pieces received
                           </p>
                         ))}
                       </td>
                       <td className="max-w-48 px-5 py-4 break-words text-slate-500">
                         {batch.supplier}
                       </td>
-                      <td className="px-5 py-4">{batch.stock}</td>
-                      <td className="px-5 py-4">{currency.format(batch.sellPrice)}</td>
+                      <td className="px-5 py-4">{piecesLabel(batch.stock, item.piecesPerBox)}</td>
+                      <td className="px-5 py-4">
+                        {currency.format(batch.sellPrice)} / piece
+                        {item.piecesPerBox > 1 && (
+                          <p className="text-xs text-slate-500">
+                            {currency.format(
+                              unitSellPrice(
+                                'box',
+                                batch.sellPrice,
+                                batch.boxSellPrice,
+                                item.piecesPerBox
+                              )
+                            )}{' '}
+                            / box
+                          </p>
+                        )}
+                      </td>
                       <td className="px-5 py-4">
                         {getExpiryStatus(batch.expiresAt) === 'unknown'
                           ? batch.expiresAt
@@ -448,6 +471,7 @@ type EditableProductField =
   | 'category'
   | 'formulation'
   | 'reorderLevel'
+  | 'piecesPerBox'
   | 'prescriptionRequired'
   | 'controlled'
 
@@ -462,6 +486,7 @@ function ProductFields({
     <div className="grid gap-5 sm:grid-cols-2">
       <Field label="Brand name">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Biogesic'}
@@ -471,6 +496,7 @@ function ProductFields({
       </Field>
       <Field label="Generic name">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Paracetamol'}
@@ -480,6 +506,7 @@ function ProductFields({
       </Field>
       <Field label="Category">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Analgesics'}
@@ -489,6 +516,7 @@ function ProductFields({
       </Field>
       <Field label="Formulation">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder="e.g. 500 mg tablet"
@@ -501,6 +529,7 @@ function ProductFields({
           required
           type="number"
           min="0"
+          max={MAX_REORDER_LEVEL}
           step="1"
           className="field"
           placeholder={'e.g. 10'}
@@ -508,6 +537,27 @@ function ProductFields({
           onChange={(event) =>
             update(
               'reorderLevel',
+              event.target.value === '' ? Number.NaN : Number(event.target.value)
+            )
+          }
+        />
+      </Field>
+      <Field
+        label="Pieces per box"
+        hint="Use 1 if the product is only bought and sold by the piece. Stock is always counted in pieces."
+      >
+        <input
+          required
+          type="number"
+          min="1"
+          max="10000"
+          step="1"
+          className="field"
+          placeholder={'e.g. 100'}
+          value={draft.piecesPerBox}
+          onChange={(event) =>
+            update(
+              'piecesPerBox',
               event.target.value === '' ? Number.NaN : Number(event.target.value)
             )
           }

@@ -1,18 +1,19 @@
 import { accessControl, authorize } from '@main/access-control'
 import { findOneById } from '@main/account/repository'
 import { state } from '@main/api'
+import { windowDialog } from '@main/api/dialogs'
+import { ipcMain } from '@main/api/ipc'
 import { channels, resources } from '@shared/constants'
 import { SalesError } from '@shared/sales'
 import {
   deliveryReceiptText,
+  wholesaleDeliverSchema,
   WholesaleError,
   wholesaleListSchema,
   wholesaleOrderSchema,
   wholesalePaymentSchema,
   wholesaleScheduleSchema
 } from '@shared/wholesale'
-import { windowDialog } from '@main/api/dialogs'
-import { ipcMain } from '@main/api/ipc'
 import type { IpcMainInvokeEvent } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import z from 'zod'
@@ -86,7 +87,7 @@ handle(channels.wholesale.schedule, 'update', (payload, account) =>
   repository.scheduleOrder(wholesaleScheduleSchema.parse(payload), account.id)
 )
 handle(channels.wholesale.deliver, 'update', (payload, account) =>
-  repository.deliverOrder(idSchema.parse(payload), account.id)
+  repository.deliverOrder(wholesaleDeliverSchema.parse(payload), account.id)
 )
 handle(channels.wholesale.cancel, 'update', (payload, account) =>
   repository.cancelOrder(idSchema.parse(payload), account.id)

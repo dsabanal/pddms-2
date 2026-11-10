@@ -6,6 +6,11 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+const handoff = (orderId) => ({
+  orderId,
+  driverName: 'Delivery Driver',
+  receivedByName: 'Clinic Pharmacist'
+})
 
 if (!process.env.WHOLESALE_TEST_PHASE) {
   const directory = await mkdtemp(join(tmpdir(), 'pddms-wholesale-test-'))
@@ -163,6 +168,8 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       await ok(channels.purchaseOrder.recordDeliveryById, po.id, {
         requestId: randomUUID(),
         deliveredAt: localDate(),
+        deliveredByName: 'Supplier Driver',
+        checkedByName: 'Receiving Clerk',
         items: po.items.map((item, index) => ({
           itemId: item.id,
           receivedQuantity: 20,
@@ -193,7 +200,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       const draft = {
         requestId: randomUUID(),
         customerId: client.id,
-        dueDate: '2000-01-01',
+        dueDate: localDate(),
         deliveryAddress: client.address,
         notes: 'Wholesale installment order',
         items: lines
@@ -216,6 +223,12 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       state.session = { account: staff }
       const before = await stock()
       const id = await ok(channels.wholesale.create, draft)
+      // Note: New orders cannot be due in the past; age this one so it shows as overdue later.
+      await db
+        .updateTable('wholesaleOrders')
+        .set({ dueDate: '2000-01-01' })
+        .where('id', '=', id)
+        .execute()
       assert.equal(await ok(channels.wholesale.create, draft), id)
       await bad(channels.wholesale.create, { ...draft, notes: 'Changed retry' })
       assert.deepEqual(await stock(), before)
@@ -240,7 +253,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         { items: [{ ...lines[0], unitPriceCents: 1 }] }
       ])
         await bad(channels.wholesale.create, { ...draft, requestId: randomUUID(), ...invalid })
-      await bad(channels.wholesale.deliver, id)
+      await bad(channels.wholesale.deliver, handoff(id))
       await bad(channels.wholesale.exportReceipt, id)
       const schedule = {
         orderId: id,
@@ -263,7 +276,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       await sql`CREATE TRIGGER test_fail_wholesale BEFORE UPDATE OF status ON wholesale_orders WHEN NEW.status = 'delivered' BEGIN SELECT RAISE(ABORT, 'test failure'); END`.execute(
         db
       )
-      await bad(channels.wholesale.deliver, id)
+      await bad(channels.wholesale.deliver, handoff(id))
       assert.deepEqual(await snapshot(), saved)
       await sql`DROP TRIGGER test_fail_wholesale`.execute(db)
       await db
@@ -272,7 +285,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         .where('id', '=', batches[1].id)
         .execute()
       saved = await snapshot()
-      await bad(channels.wholesale.deliver, id)
+      await bad(channels.wholesale.deliver, handoff(id))
       assert.deepEqual(await snapshot(), saved)
       await db
         .updateTable('batches')
@@ -284,15 +297,24 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         .set({ isArchived: 1 })
         .where('id', '=', products[0].id)
         .execute()
-      await bad(channels.wholesale.deliver, id)
+      await bad(channels.wholesale.deliver, handoff(id))
       await db
         .updateTable('drugs')
         .set({ isArchived: 0 })
         .where('id', '=', products[0].id)
         .execute()
-      await ok(channels.wholesale.deliver, id)
+      // Handled-by: both people at the hand-off are required before stock moves.
+      await bad(channels.wholesale.deliver, { ...handoff(id), receivedByName: '' })
+      await bad(channels.wholesale.deliver, { ...handoff(id), driverName: 'X' })
+      await ok(channels.wholesale.deliver, handoff(id))
+      const handled = await ok(channels.wholesale.get, id)
+      assert.equal(handled.driverName, 'Delivery Driver')
+      assert.equal(handled.receivedByName, 'Clinic Pharmacist')
+      assert.ok(handled.scheduledByName)
+      assert.ok(handled.createdByName)
+      assert.ok(handled.deliveredByName)
       saved = await snapshot()
-      await bad(channels.wholesale.deliver, id)
+      await bad(channels.wholesale.deliver, handoff(id))
       await bad(channels.wholesale.schedule, schedule)
       await bad(channels.wholesale.cancel, id)
       assert.deepEqual(await snapshot(), saved)
@@ -369,15 +391,30 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       await bad(channels.wholesale.pay, payment(id, 1))
       assert.equal(receivable(10000, 0, localDate()).deadlineStatus, 'upcoming')
       assert.equal(receivable(10000, 0, '2099-01-01').paymentStatus, 'outstanding')
-      const insufficient = await ok(channels.wholesale.create, {
+      // Orders larger than the stock on hand are refused when they are created.
+      await bad(channels.wholesale.create, {
         ...draft,
         requestId: randomUUID(),
         items: [{ ...lines[0], quantity: 19 }]
       })
+      const insufficient = await ok(channels.wholesale.create, {
+        ...draft,
+        requestId: randomUUID(),
+        items: [{ ...lines[0], quantity: 18 }]
+      })
       await ok(channels.wholesale.schedule, { ...schedule, orderId: insufficient })
+      // Stock is not reserved: simulate one unit sold elsewhere before the delivery.
+      const shiftStock = (change) =>
+        db
+          .updateTable('batches')
+          .set((expression) => ({ currentStock: expression('currentStock', '+', change) }))
+          .where('id', '=', lines[0].batchId)
+          .execute()
+      await shiftStock(-1)
       saved = await snapshot()
-      await bad(channels.wholesale.deliver, insufficient)
+      await bad(channels.wholesale.deliver, handoff(insufficient))
       assert.deepEqual(await snapshot(), saved)
+      await shiftStock(1)
       await ok(channels.wholesale.cancel, insufficient)
       await bad(channels.wholesale.pay, payment(insufficient, 1))
       await bad(channels.wholesale.schedule, { ...schedule, orderId: insufficient })
@@ -404,7 +441,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         concurrent.push(orderId)
       }
       const results = await Promise.all(
-        concurrent.map((orderId) => invoke(channels.wholesale.deliver, orderId))
+        concurrent.map((orderId) => invoke(channels.wholesale.deliver, handoff(orderId)))
       )
       assert.equal(results.filter((result) => result.success).length, 1)
       assert.equal((await stock())[1].currentStock, 0)
