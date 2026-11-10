@@ -21,7 +21,7 @@ import {
   type PurchaseOrderRecord
 } from '@renderer/data/supplierOrders'
 import { useSupplierOrders } from '@renderer/hooks/useSupplierOrders'
-import { localDate } from '@shared/inventory'
+import { EXPIRY_WARNING_DAYS, getExpiryStatus, localDate } from '@shared/inventory'
 import type { Supplier } from '@shared/types'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useRef, useState, type FormEvent, type ReactElement, type ReactNode } from 'react'
@@ -933,39 +933,47 @@ function SupplierDialog({
         <RequiredNote />
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Organization" required error={errors.organization}>
-            {input('organization', { placeholder: 'e.g. MedSupply Distribution' })}
+            {input('organization', { placeholder: 'e.g. MedSupply Distribution', maxLength: 120 })}
           </FormField>
           <FormField label="Contact person" required error={errors.person}>
-            {input('person', { placeholder: 'e.g. Juan Dela Cruz' })}
+            {input('person', { placeholder: 'e.g. Juan Dela Cruz', maxLength: 120 })}
           </FormField>
           <FormField
             label="Mobile phone"
             required
-            hint="11 digits starting with 09."
+            hint="e.g. 09171234567 or +63 917 123 4567."
             error={errors.phone}
           >
-            {input('phone', { placeholder: '09171234567', inputMode: 'numeric', maxLength: 11 })}
+            {input('phone', { placeholder: '09171234567', inputMode: 'tel', maxLength: 20 })}
           </FormField>
           <FormField label="Telephone" error={errors.telephone}>
-            {input('telephone', { placeholder: 'e.g. (082) 123 4567', inputMode: 'tel' })}
+            {input('telephone', {
+              placeholder: 'e.g. (082) 123 4567',
+              inputMode: 'tel',
+              maxLength: 20
+            })}
           </FormField>
           <FormField label="Email" error={errors.email} className="sm:col-span-2">
-            {input('email', { type: 'email', placeholder: 'e.g. orders@supplier.ph' })}
+            {input('email', {
+              type: 'email',
+              placeholder: 'e.g. orders@supplier.ph',
+              maxLength: 254
+            })}
           </FormField>
           <FormField label="Street" required error={errors.street}>
-            {input('street', { placeholder: 'e.g. 123 Rizal Street' })}
+            {input('street', { placeholder: 'e.g. 123 Rizal Street', maxLength: 500 })}
           </FormField>
           <FormField label="City" required error={errors.city}>
-            {input('city', { placeholder: 'e.g. Davao City' })}
+            {input('city', { placeholder: 'e.g. Davao City', maxLength: 100 })}
           </FormField>
           <FormField label="Province" required error={errors.province}>
-            {input('province', { placeholder: 'e.g. Davao del Sur' })}
+            {input('province', { placeholder: 'e.g. Davao del Sur', maxLength: 100 })}
           </FormField>
           <FormField label="Postal code" required hint="4 digits." error={errors.postalCode}>
             {input('postalCode', { placeholder: '8000', inputMode: 'numeric', maxLength: 4 })}
           </FormField>
           <FormField label="Country" required error={errors.country}>
-            {input('country')}
+            {input('country', { maxLength: 100 })}
           </FormField>
         </div>
         <FormError message={error} />
@@ -1361,8 +1369,13 @@ function ReceiveDialog({
           nextErrors[`${item.id}.expiresAt`] = 'Enter the expiry date printed on the package.'
         if (!line.sellPrice.trim())
           nextErrors[`${item.id}.sellPrice`] = 'Enter the selling price per unit.'
+        else if (Number(line.sellPrice) < item.unitCost)
+          nextErrors[`${item.id}.sellPrice`] =
+            `The selling price cannot be lower than the unit cost of ${currency.format(item.unitCost)}.`
       }
     }
+    if (deliveredAt < order.orderedAt.slice(0, 10))
+      nextErrors.deliveredAt = 'The delivery date cannot be before the purchase order date.'
     const deliveredLines = delivered.filter((item) => Number(lines[item.id].receivedQuantity) > 0)
     if (Object.keys(nextErrors).length === 0 && deliveredLines.length === 0) {
       setError('Enter the delivered quantity for at least one product.')
@@ -1402,11 +1415,21 @@ function ReceiveDialog({
     }
   }
 
-  const cell = (itemId: number, field: keyof ReceiveLine, control: ReactElement): ReactElement => (
+  const cell = (
+    itemId: number,
+    field: keyof ReceiveLine,
+    control: ReactElement,
+    warning?: string
+  ): ReactElement => (
     <td className="px-2 py-2 align-top">
       {control}
       {errors[`${itemId}.${field}`] && (
         <p className="mt-1 text-xs font-medium text-rose-700">{errors[`${itemId}.${field}`]}</p>
+      )}
+      {warning && (
+        <p role="status" className="mt-1 text-xs font-medium text-amber-700">
+          {warning}
+        </p>
       )}
     </td>
   )
@@ -1426,6 +1449,7 @@ function ReceiveDialog({
             <input
               type="date"
               className="field"
+              min={order.orderedAt.slice(0, 10)}
               max={localDate()}
               value={deliveredAt}
               onChange={(event) => {
@@ -1542,14 +1566,19 @@ function ReceiveDialog({
                         aria-invalid={errors[`${item.id}.expiresAt`] ? true : undefined}
                         value={line.expiresAt}
                         onChange={(event) => updateLine(item.id, 'expiresAt', event.target.value)}
-                      />
+                      />,
+                      line.expiresAt &&
+                        !errors[`${item.id}.expiresAt`] &&
+                        getExpiryStatus(line.expiresAt) === 'near-expiry'
+                        ? `Near expiry: within ${EXPIRY_WARNING_DAYS} days. Check before accepting.`
+                        : undefined
                     )}
                     {cell(
                       item.id,
                       'sellPrice',
                       <input
                         type="number"
-                        min="0"
+                        min={item.unitCost}
                         step="0.01"
                         inputMode="decimal"
                         className="field mt-0"

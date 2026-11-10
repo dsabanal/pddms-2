@@ -1,5 +1,6 @@
 import DashboardShell from '@renderer/components/dashboard/DashboardShell'
 import { useConfirm } from '@renderer/components/ui/ConfirmDialog'
+import type { FieldErrors } from '@renderer/components/ui/fieldErrors'
 import type { CustomerProfile, ItemProfile } from '@renderer/data/profiles'
 import { useAccount } from '@renderer/hooks/useAccount'
 import { getCustomers, getProducts } from '@renderer/services/profiles'
@@ -17,10 +18,10 @@ import {
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { isBatchSellable, localDate } from '@shared/inventory'
 import { calculateSale, money, priceToCents, type CartLine } from '@shared/sales'
+import { FieldValidationError } from '@shared/validation'
 import {
   deliveryReceiptText,
   orderStatuses,
-  wholesaleOrderSchema,
   type WholesaleDetails,
   type WholesaleFilter,
   type WholesaleSummary
@@ -64,8 +65,33 @@ export default function WholesaleWorkspace(): ReactElement {
   const pending = useRef<{ fingerprint: string; id: string } | null>(null)
   const working = useRef(false)
   const selectedId = useRef<number | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const fail = (cause: unknown): void =>
     setError(cause instanceof Error ? cause.message : 'Unable to load wholesale data.')
+  /** Runs a form action and shows schema problems beside the fields of that form. */
+  const runForm = (form: string, action: () => Promise<void>): Promise<void> =>
+    run(async () => {
+      setFieldErrors({})
+      try {
+        await action()
+      } catch (cause) {
+        if (!(cause instanceof FieldValidationError)) throw cause
+        const fields: FieldErrors = {}
+        for (const issue of cause.issues) fields[`${form}.${issue.field}`] ??= issue.message
+        setFieldErrors(fields)
+        throw new Error('Check the highlighted fields.')
+      }
+    })
+  const fieldError = (key: string): ReactElement | null =>
+    fieldErrors[key] ? (
+      <span
+        id={`${key.replace('.', '-')}-error`}
+        className="mt-1 block text-xs font-medium text-rose-700"
+      >
+        {fieldErrors[key]}
+      </span>
+    ) : null
+  const invalid = (key: string): true | undefined => (fieldErrors[key] ? true : undefined)
   const fetchOrders = useCallback(
     () => Promise.all([listWholesale(filter), admin ? wholesaleAlerts() : Promise.resolve(null)]),
     [filter, admin]
@@ -252,7 +278,7 @@ export default function WholesaleWorkspace(): ReactElement {
             className="panel space-y-4 p-5"
             onSubmit={(event) => {
               event.preventDefault()
-              void run(async () => {
+              void runForm('order', async () => {
                 const values = {
                   customerId: Number(customerId),
                   dueDate,
@@ -263,17 +289,7 @@ export default function WholesaleWorkspace(): ReactElement {
                 const fingerprint = JSON.stringify(values)
                 if (pending.current?.fingerprint !== fingerprint)
                   pending.current = { fingerprint, id: crypto.randomUUID() }
-                const parsed = wholesaleOrderSchema.safeParse({
-                  ...values,
-                  requestId: pending.current.id
-                })
-                if (!parsed.success)
-                  throw new Error(
-                    parsed.error.issues
-                      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-                      .join(' ')
-                  )
-                const id = await createWholesale(parsed.data)
+                const id = await createWholesale({ ...values, requestId: pending.current.id })
                 pending.current = null
                 setLines([])
                 setNotes('')
@@ -286,8 +302,8 @@ export default function WholesaleWorkspace(): ReactElement {
           >
             <h3 className="text-lg font-semibold">Record wholesale order</h3>
             <p className="text-sm text-slate-500">
-              Uses catalog prices. Stock is not reserved; availability is rechecked at delivery.
-              Partial payments are supported.
+              Uses catalog prices. Quantities are checked against current stock now and again at
+              delivery; stock is not reserved for this order. Partial payments are supported.
             </p>
             <fieldset disabled={busy} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -296,6 +312,7 @@ export default function WholesaleWorkspace(): ReactElement {
                   <select
                     required
                     className="field"
+                    aria-invalid={invalid('order.customerId')}
                     value={customerId}
                     onChange={(event) => {
                       setCustomerId(event.target.value)
@@ -312,6 +329,7 @@ export default function WholesaleWorkspace(): ReactElement {
                       </option>
                     ))}
                   </select>
+                  {fieldError('order.customerId')}
                 </label>
                 <label>
                   Payment due date *
@@ -319,9 +337,12 @@ export default function WholesaleWorkspace(): ReactElement {
                     required
                     type="date"
                     className="field"
+                    min={localDate()}
+                    aria-invalid={invalid('order.dueDate')}
                     value={dueDate}
                     onChange={(event) => setDueDate(event.target.value)}
                   />
+                  {fieldError('order.dueDate')}
                 </label>
               </div>
               <label className="block">
@@ -330,18 +351,22 @@ export default function WholesaleWorkspace(): ReactElement {
                   required
                   maxLength={500}
                   className="field"
+                  aria-invalid={invalid('order.deliveryAddress')}
                   value={address}
                   onChange={(event) => setAddress(event.target.value)}
                 />
+                {fieldError('order.deliveryAddress')}
               </label>
               <label className="block">
                 Order notes
                 <input
                   maxLength={500}
                   className="field"
+                  aria-invalid={invalid('order.notes')}
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                 />
+                {fieldError('order.notes')}
               </label>
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-0 flex-1">
@@ -394,6 +419,12 @@ export default function WholesaleWorkspace(): ReactElement {
                       return
                     }
                     const existing = lines.find((line) => line.batchId === batch.id)
+                    if (qty + (existing?.quantity ?? 0) > batch.stock) {
+                      setError(
+                        `Only ${batch.stock} unit(s) of ${batch.productName} batch ${batch.batchNumber} are in stock.`
+                      )
+                      return
+                    }
                     const line = {
                       batchId: batch.id,
                       quantity: qty + (existing?.quantity ?? 0),
@@ -640,7 +671,7 @@ export default function WholesaleWorkspace(): ReactElement {
                   className="space-y-3 rounded-md border border-slate-200 p-4"
                   onSubmit={(event) => {
                     event.preventDefault()
-                    void run(() =>
+                    void runForm('schedule', () =>
                       update(
                         () =>
                           scheduleWholesale({
@@ -663,9 +694,11 @@ export default function WholesaleWorkspace(): ReactElement {
                         type="date"
                         required
                         min={selected.orderDate}
+                        aria-invalid={invalid('schedule.scheduledDate')}
                         value={scheduleDate}
                         onChange={(event) => setScheduleDate(event.target.value)}
                       />
+                      {fieldError('schedule.scheduledDate')}
                     </label>
                     <label>
                       Delivery address *
@@ -673,9 +706,11 @@ export default function WholesaleWorkspace(): ReactElement {
                         className="field"
                         required
                         maxLength={500}
+                        aria-invalid={invalid('schedule.deliveryAddress')}
                         value={scheduleAddress}
                         onChange={(event) => setScheduleAddress(event.target.value)}
                       />
+                      {fieldError('schedule.deliveryAddress')}
                     </label>
                     <label className="md:col-span-2">
                       Delivery notes
@@ -789,11 +824,14 @@ export default function WholesaleWorkspace(): ReactElement {
                     className="space-y-3"
                     onSubmit={(event) => {
                       event.preventDefault()
-                      void run(async () => {
-                        if (!/^\d+(\.\d{1,2})?$/.test(amount))
-                          throw new Error(
-                            'Enter a positive payment with at most two decimal places.'
-                          )
+                      void runForm('payment', async () => {
+                        if (!/^\d+(\.\d{1,2})?$/.test(amount)) {
+                          setFieldErrors({
+                            'payment.amountCents':
+                              'Enter a positive payment with at most two decimal places.'
+                          })
+                          throw new Error('Check the highlighted fields.')
+                        }
                         await update(
                           () =>
                             payWholesale({
@@ -825,9 +863,11 @@ export default function WholesaleWorkspace(): ReactElement {
                                 ?.amountCents ?? 0)) /
                             100
                           }
+                          aria-invalid={invalid('payment.amountCents')}
                           value={amount}
                           onChange={(event) => setAmount(event.target.value)}
                         />
+                        {fieldError('payment.amountCents')}
                       </label>
                       <label>
                         Payment date *
@@ -837,9 +877,11 @@ export default function WholesaleWorkspace(): ReactElement {
                           type="date"
                           min={selected.orderDate}
                           max={localDate()}
+                          aria-invalid={invalid('payment.paidAt')}
                           value={paidAt}
                           onChange={(event) => setPaidAt(event.target.value)}
                         />
+                        {fieldError('payment.paidAt')}
                       </label>
                       <label>
                         Unique payment reference *
@@ -847,9 +889,11 @@ export default function WholesaleWorkspace(): ReactElement {
                           required
                           className="field"
                           maxLength={120}
+                          aria-invalid={invalid('payment.reference')}
                           value={reference}
                           onChange={(event) => setReference(event.target.value)}
                         />
+                        {fieldError('payment.reference')}
                       </label>
                       <label>
                         Method *
@@ -857,9 +901,11 @@ export default function WholesaleWorkspace(): ReactElement {
                           required
                           className="field"
                           maxLength={80}
+                          aria-invalid={invalid('payment.method')}
                           value={method}
                           onChange={(event) => setMethod(event.target.value)}
                         />
+                        {fieldError('payment.method')}
                       </label>
                       <label>
                         Payment notes

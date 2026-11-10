@@ -177,6 +177,10 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
         !isBatchSellable(batch.currentStock, String(batch.expiresAt))
       )
         throw new WholesaleError('Select an active product with valid, available stock.')
+      if (item.quantity > batch.currentStock)
+        throw new WholesaleError(
+          `${batch.brandName}: only ${batch.currentStock} unit(s) in stock for batch ${batch.physicalTag ?? batch.id}.`
+        )
       if (priceToCents(batch.sellPrice) !== item.unitPriceCents)
         throw new WholesaleError('Product price changed. Refresh and re-add the batch.')
       return {

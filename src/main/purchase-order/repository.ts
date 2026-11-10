@@ -254,9 +254,12 @@ export async function recordDelivery(
     }
     const order = await transaction
       .selectFrom('purchaseOrders')
-      .select(['supplierId', 'status'])
+      .select(['supplierId', 'status', 'orderedAt'])
       .where('id', '=', id)
       .executeTakeFirstOrThrow()
+    if (data.deliveredAt < String(order.orderedAt).slice(0, 10)) {
+      throw new Error('The delivery date cannot be before the purchase order date.')
+    }
     if (!['submitted', 'partially_received'].includes(order.status)) {
       throw new Error(
         order.status === 'draft'
@@ -295,6 +298,11 @@ export async function recordDelivery(
       }
       if (deliveredItem.expiresAt <= data.deliveredAt) {
         throw new Error('Delivered stock must expire after the delivery date.')
+      }
+      if (deliveredItem.sellPrice < item.unitCost) {
+        throw new Error(
+          `Batch ${deliveredItem.batchNumber}: the selling price cannot be lower than the unit cost of ₱${item.unitCost.toFixed(2)}.`
+        )
       }
 
       const existingBatch = await transaction

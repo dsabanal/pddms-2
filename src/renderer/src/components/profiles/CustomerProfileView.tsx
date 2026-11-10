@@ -1,8 +1,9 @@
 import DashboardShell from '@renderer/components/dashboard/DashboardShell'
+import { splitErrors, type FieldErrors } from '@renderer/components/ui/fieldErrors'
 import { type CustomerDiscount, type CustomerProfile } from '@renderer/data/profiles'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useState, type FormEvent, type ReactElement } from 'react'
+import { cloneElement, useId, useState, type FormEvent, type ReactElement } from 'react'
 import {
   FiArrowLeft,
   FiCheckCircle,
@@ -44,6 +45,7 @@ export default function CustomerProfileView({
   const [draft, setDraft] = useState(customer ?? emptyCustomer)
   const [editing, setEditing] = useState(isNew)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [success, setSuccess] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
@@ -66,6 +68,7 @@ export default function CustomerProfileView({
 
     setIsSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       const saved = await saveCustomer(
         {
@@ -90,7 +93,9 @@ export default function CustomerProfileView({
         })
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save the customer.')
+      const { fields, form } = splitErrors(cause, 'Unable to save the customer.')
+      setFieldErrors(fields)
+      setError(form)
     } finally {
       setIsSaving(false)
     }
@@ -143,29 +148,31 @@ export default function CustomerProfileView({
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Full name">
+                <Field label="Full name" error={fieldErrors.fullName}>
                   <input
                     required
                     className="field"
+                    maxLength={120}
                     placeholder={'e.g. Juan Dela Cruz'}
                     value={draft.fullName}
                     onChange={(event) => setDraft({ ...draft, fullName: event.target.value })}
                   />
                 </Field>
-                <Field label="Phone">
+                <Field label="Phone" error={fieldErrors.phone}>
                   <input
                     required
                     className="field"
-                    inputMode={'numeric'}
-                    maxLength={11}
+                    inputMode={'tel'}
+                    maxLength={20}
                     placeholder={'e.g. 09171234567'}
                     value={draft.phone}
                     onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
                   />
                 </Field>
-                <Field label="Email">
+                <Field label="Email" error={fieldErrors.email}>
                   <input
                     type="email"
+                    maxLength={254}
                     className="field"
                     placeholder={'e.g. juan@example.com'}
                     value={draft.email}
@@ -189,9 +196,10 @@ export default function CustomerProfileView({
                   </select>
                 </Field>
                 <div className="sm:col-span-2">
-                  <Field label="Address">
+                  <Field label="Address" error={fieldErrors.address}>
                     <input
                       className="field"
+                      maxLength={500}
                       placeholder={'e.g. Davao City'}
                       value={draft.address}
                       onChange={(event) => setDraft({ ...draft, address: event.target.value })}
@@ -200,16 +208,24 @@ export default function CustomerProfileView({
                 </div>
                 {draft.discountType !== 'none' && (
                   <>
-                    <Field label="Discount ID">
+                    <Field label="Discount ID" error={fieldErrors.discountId}>
                       <input
                         required
                         className="field"
+                        maxLength={40}
                         placeholder={'e.g. SC-123456'}
                         value={draft.discountId}
                         onChange={(event) => setDraft({ ...draft, discountId: event.target.value })}
                       />
                     </Field>
-                    <Field label="ID expiry (if applicable)">
+                    <Field
+                      label={
+                        draft.discountType === 'pwd'
+                          ? 'ID expiry'
+                          : 'ID expiry (if printed on the ID)'
+                      }
+                      error={fieldErrors.discountExpiresAt}
+                    >
                       <input
                         type="date"
                         className="field"
@@ -242,6 +258,7 @@ export default function CustomerProfileView({
                     onClick={() => {
                       setDraft(customer ?? emptyCustomer)
                       setError('')
+                      setFieldErrors({})
                       setEditing(false)
                     }}
                     className="secondary-button"
@@ -433,12 +450,33 @@ export default function CustomerProfileView({
   )
 }
 
-function Field({ label, children }: { label: string; children: ReactElement }): ReactElement {
+function Field({
+  label,
+  error,
+  children
+}: {
+  label: string
+  error?: string
+  children: ReactElement
+}): ReactElement {
+  const id = useId()
   return (
-    <label className="block text-[0.72rem] font-semibold tracking-[0.08em] text-slate-600 uppercase">
-      {label}
-      <span className="mt-2 block">{children}</span>
-    </label>
+    <div>
+      <label className="block text-[0.72rem] font-semibold tracking-[0.08em] text-slate-600 uppercase">
+        {label}
+        <span className="mt-2 block">
+          {cloneElement(children as ReactElement<Record<string, unknown>>, {
+            'aria-invalid': error ? true : undefined,
+            'aria-describedby': error ? `${id}-error` : undefined
+          })}
+        </span>
+      </label>
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-xs font-medium text-rose-700">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 

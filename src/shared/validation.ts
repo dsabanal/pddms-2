@@ -46,12 +46,24 @@ export const fieldNames: Record<string, string> = {
   referenceNumber: 'Reference number',
   fileToken: 'Invoice file',
   batchId: 'Inventory batch',
-  reason: 'Reason'
+  reason: 'Reason',
+  address: 'Address',
+  discountExpiresAt: 'ID expiry date',
+  deliveryAddress: 'Delivery address',
+  deliveryNotes: 'Delivery notes',
+  scheduledDate: 'Delivery date',
+  reference: 'Payment reference',
+  amountCents: 'Amount',
+  cashCents: 'Cash received',
+  customerId: 'Customer'
 }
 
 // Note: Field-specific wording for format rules a generic message cannot explain.
 const formatMessages: Record<string, string> = {
-  phone: 'Mobile phone must be 11 digits starting with 09, e.g. 09171234567.',
+  phone: 'Mobile phone must be 11 digits starting with 09, e.g. 09171234567 or +63 917 123 4567.',
+  telephone:
+    'Telephone may use only digits, spaces, brackets, dashes and a leading +, e.g. (083) 552 1234.',
+  organization: 'Organization must start with a letter or number and avoid special symbols.',
   email: 'Email must be a valid address, e.g. name@example.com.',
   username: 'Username may use only letters, numbers, dots, dashes or underscores.',
   fullName: 'Full name may use only letters, spaces, periods, commas, apostrophes or hyphens.',

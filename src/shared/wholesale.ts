@@ -20,6 +20,10 @@ export const wholesaleOrderSchema = z
     (value) => new Set(value.items.map((item) => item.batchId)).size === value.items.length,
     'Each batch must appear only once.'
   )
+  .refine((value) => value.dueDate >= localDate(), {
+    path: ['dueDate'],
+    message: 'The payment due date cannot be before the order date (today).'
+  })
 export const wholesaleScheduleSchema = z.strictObject({
   orderId: id,
   scheduledDate: isoDateSchema('Enter a valid delivery date.'),

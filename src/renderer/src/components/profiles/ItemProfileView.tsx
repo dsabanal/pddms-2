@@ -8,6 +8,7 @@ import {
 import { useAccount } from '@renderer/hooks/useAccount'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { expiryLabels, getExpiryStatus } from '@shared/inventory'
+import { MAX_REORDER_LEVEL } from '@shared/schemas'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent, type ReactElement } from 'react'
 import { FiArrowLeft, FiEdit2, FiPackage, FiTrash2, FiX } from 'react-icons/fi'
@@ -462,6 +463,7 @@ function ProductFields({
     <div className="grid gap-5 sm:grid-cols-2">
       <Field label="Brand name">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Biogesic'}
@@ -471,6 +473,7 @@ function ProductFields({
       </Field>
       <Field label="Generic name">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Paracetamol'}
@@ -480,6 +483,7 @@ function ProductFields({
       </Field>
       <Field label="Category">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder={'e.g. Analgesics'}
@@ -489,6 +493,7 @@ function ProductFields({
       </Field>
       <Field label="Formulation">
         <input
+          maxLength={120}
           required
           className="field"
           placeholder="e.g. 500 mg tablet"
@@ -501,6 +506,7 @@ function ProductFields({
           required
           type="number"
           min="0"
+          max={MAX_REORDER_LEVEL}
           step="1"
           className="field"
           placeholder={'e.g. 10'}

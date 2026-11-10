@@ -1,5 +1,6 @@
 import DashboardShell from '@renderer/components/dashboard/DashboardShell'
 import { useConfirm } from '@renderer/components/ui/ConfirmDialog'
+import { splitErrors, type FieldErrors } from '@renderer/components/ui/fieldErrors'
 import {
   roleLabels,
   type ManagedUser,
@@ -8,7 +9,7 @@ import {
   type UserUpdateValues
 } from '@renderer/data/userManagement'
 import { useUserManagement } from '@renderer/hooks/useUserManagement'
-import { useMemo, useState, type FormEvent, type ReactElement } from 'react'
+import { cloneElement, useId, useMemo, useState, type FormEvent, type ReactElement } from 'react'
 import { FiEdit2, FiPlus, FiSearch, FiShield, FiTrash2, FiUsers, FiX } from 'react-icons/fi'
 import AdministrationTools from './AdministrationTools'
 
@@ -301,11 +302,13 @@ function CreateUserDialog({
     password: ''
   })
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     setSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       await save({
         ...values,
@@ -313,24 +316,27 @@ function CreateUserDialog({
         username: values.username.trim().toLowerCase()
       })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to create the account.')
+      const { fields, form } = splitErrors(cause, 'Unable to create the account.')
+      setFieldErrors(fields)
+      setError(form)
       setSaving(false)
     }
   }
   return (
     <Dialog title="Create user account" close={close}>
       <form noValidate onSubmit={(event) => void submit(event)} className="space-y-4">
-        <Field label="Full name">
+        <Field label="Full name" error={fieldErrors.fullName}>
           <input
             required
             minLength={2}
+            maxLength={120}
             className="field"
             placeholder={'e.g. Juan Dela Cruz'}
             value={values.fullName}
             onChange={(event) => setValues({ ...values, fullName: event.target.value })}
           />
         </Field>
-        <Field label="Username">
+        <Field label="Username" error={fieldErrors.username}>
           <input
             required
             minLength={4}
@@ -342,7 +348,7 @@ function CreateUserDialog({
             onChange={(event) => setValues({ ...values, username: event.target.value })}
           />
         </Field>
-        <Field label="Role">
+        <Field label="Role" error={fieldErrors.role}>
           <select
             className="field"
             value={values.role}
@@ -357,10 +363,11 @@ function CreateUserDialog({
               ))}
           </select>
         </Field>
-        <Field label="Temporary password">
+        <Field label="Temporary password" error={fieldErrors.password}>
           <input
             required
             minLength={8}
+            maxLength={128}
             type="password"
             autoComplete="new-password"
             className="field"
@@ -406,12 +413,14 @@ function EditUserDialog({
     password: ''
   })
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
 
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     setSaving(true)
     setError('')
+    setFieldErrors({})
     try {
       await save({
         ...values,
@@ -419,7 +428,9 @@ function EditUserDialog({
         username: values.username.trim().toLowerCase()
       })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to update the account.')
+      const { fields, form } = splitErrors(cause, 'Unable to update the account.')
+      setFieldErrors(fields)
+      setError(form)
       setSaving(false)
     }
   }
@@ -427,17 +438,18 @@ function EditUserDialog({
   return (
     <Dialog title={'Edit user account'} close={close}>
       <form noValidate onSubmit={(event) => void submit(event)} className={'space-y-4'}>
-        <Field label={'Full name'}>
+        <Field label={'Full name'} error={fieldErrors.fullName}>
           <input
             required
             minLength={2}
+            maxLength={120}
             className={'field'}
             placeholder={'e.g. Juan Dela Cruz'}
             value={values.fullName}
             onChange={(event) => setValues({ ...values, fullName: event.target.value })}
           />
         </Field>
-        <Field label={'Username'}>
+        <Field label={'Username'} error={fieldErrors.username}>
           <input
             required
             minLength={4}
@@ -449,7 +461,7 @@ function EditUserDialog({
             onChange={(event) => setValues({ ...values, username: event.target.value })}
           />
         </Field>
-        <Field label={'Role'}>
+        <Field label={'Role'} error={fieldErrors.role}>
           <select
             className={'field'}
             value={values.role}
@@ -459,9 +471,10 @@ function EditUserDialog({
             <option value={'cashier'}>{roleLabels.cashier}</option>
           </select>
         </Field>
-        <Field label={'New password (optional)'}>
+        <Field label={'New password (optional)'} error={fieldErrors.password}>
           <input
             minLength={8}
+            maxLength={128}
             type={'password'}
             autoComplete={'new-password'}
             className={'field'}
@@ -601,12 +614,33 @@ function Dialog({
   )
 }
 
-function Field({ label, children }: { label: string; children: ReactElement }): ReactElement {
+function Field({
+  label,
+  error,
+  children
+}: {
+  label: string
+  error?: string
+  children: ReactElement
+}): ReactElement {
+  const id = useId()
   return (
-    <label className="block text-sm font-medium text-slate-700">
-      {label}
-      <span className="mt-1.5 block">{children}</span>
-    </label>
+    <div>
+      <label className="block text-sm font-medium text-slate-700">
+        {label}
+        <span className="mt-1.5 block">
+          {cloneElement(children as ReactElement<Record<string, unknown>>, {
+            'aria-invalid': error ? true : undefined,
+            'aria-describedby': error ? `${id}-error` : undefined
+          })}
+        </span>
+      </label>
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-xs font-medium text-rose-700">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 

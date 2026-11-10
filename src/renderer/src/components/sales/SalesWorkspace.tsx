@@ -31,6 +31,7 @@ export default function SalesWorkspace(): ReactElement {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [cashError, setCashError] = useState('')
   const [notice, setNotice] = useState('')
   const [receipt, setReceipt] = useState<SaleRecord | null>(null)
   const [history, setHistory] = useState<Omit<SaleRecord, 'items'>[] | null>(null)
@@ -115,11 +116,18 @@ export default function SalesWorkspace(): ReactElement {
     paying.current = true
     setBusy(true)
     setError('')
+    setCashError('')
     setNotice('')
     try {
       if (pricing.error) throw new Error(pricing.error)
-      if (!/^\d+(\.\d{1,2})?$/.test(cash))
-        throw new Error('Enter cash received with at most two decimal places.')
+      if (!/^\d+(\.\d{1,2})?$/.test(cash)) {
+        setCashError('Enter cash received with at most two decimal places.')
+        return
+      }
+      if (priceToCents(Number(cash)) < pricing.totals.totalCents) {
+        setCashError(`Cash received must be at least ${money(pricing.totals.totalCents)}.`)
+        return
+      }
       const values = {
         customerId,
         items: cart,
@@ -449,8 +457,18 @@ export default function SalesWorkspace(): ReactElement {
                   step="0.01"
                   value={cash}
                   disabled={busy}
-                  onChange={(event) => setCash(event.target.value)}
+                  aria-invalid={cashError ? true : undefined}
+                  aria-describedby={cashError ? 'cash-error' : undefined}
+                  onChange={(event) => {
+                    setCash(event.target.value)
+                    setCashError('')
+                  }}
                 />
+                {cashError && (
+                  <span id="cash-error" className="mt-1 block text-xs font-medium text-rose-700">
+                    {cashError}
+                  </span>
+                )}
               </label>
               <p className="font-semibold">
                 Change:{' '}

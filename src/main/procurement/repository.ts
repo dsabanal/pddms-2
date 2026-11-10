@@ -357,12 +357,15 @@ export async function insertPayment(data: PaymentInput): Promise<SupplierPayment
   const paymentId = await db.transaction().execute(async (transaction) => {
     const order = await transaction
       .selectFrom('purchaseOrders')
-      .select(['id', 'supplierId', 'status'])
+      .select(['id', 'supplierId', 'status', 'orderedAt'])
       .where('id', '=', data.purchaseOrderId)
       .executeTakeFirst()
     if (!order) throw new Error('Purchase order not found.')
     if (!['partially_received', 'received', 'cancelled'].includes(order.status)) {
       throw new Error('Record a supplier delivery before recording a payment.')
+    }
+    if (data.paidAt < String(order.orderedAt).slice(0, 10)) {
+      throw new Error('The payment date cannot be before the purchase order date.')
     }
 
     if (data.invoiceId) {

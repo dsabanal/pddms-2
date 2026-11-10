@@ -240,7 +240,7 @@ if (!process.env.REPORT_TEST_PHASE) {
       const draft = (items) => ({
         requestId: randomUUID(),
         customerId: regular.id,
-        dueDate: '2000-01-01',
+        dueDate: localDate(),
         deliveryAddress: 'Address',
         notes: '',
         items
@@ -256,6 +256,12 @@ if (!process.env.REPORT_TEST_PHASE) {
       await ok(channels.wholesale.deliver, deliveredId)
       const pendingId = (await ok(channels.wholesale.create, draft([line(0, 1)]))).data
       const cancelledId = (await ok(channels.wholesale.create, draft([line(0, 1)]))).data
+      // Note: New orders cannot be due in the past; age them so the overdue report has rows.
+      await db
+        .updateTable('wholesaleOrders')
+        .set({ dueDate: '2000-01-01' })
+        .where('id', 'in', [deliveredId, pendingId, cancelledId])
+        .execute()
       await ok(channels.wholesale.cancel, cancelledId)
       const pay = (orderId, amountCents, reference) =>
         ok(channels.wholesale.pay, {
