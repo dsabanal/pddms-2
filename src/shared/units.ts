@@ -18,15 +18,33 @@ export const piecesPerBoxSchema = z
 
 export class UnitError extends Error {}
 
-/** Pieces in one unit of the given kind. A box needs a product with more than one piece per box. */
+/**
+ * Pieces in one unit of the given kind. A product packed one piece per box (a bottle, a tube)
+ * still counts as a box of 1, because purchase orders and wholesale orders are per box only.
+ */
 export function piecesPerUnit(unit: StockUnit, piecesPerBox: number): number {
   if (unit === 'piece') return 1
-  if (!Number.isInteger(piecesPerBox) || piecesPerBox <= 1)
+  if (!Number.isInteger(piecesPerBox) || piecesPerBox < 1)
     throw new UnitError(
       'This product is not set up for box quantities. Set pieces per box on the product first.'
     )
   return piecesPerBox
 }
+
+/**
+ * Pieces in one unit sold at the counter. Retail box sales need a real multi-piece box; a product
+ * packed one per box is sold by the piece.
+ */
+export function saleUnitPieces(unit: StockUnit, piecesPerBox: number): number {
+  if (unit === 'box' && piecesPerBox <= 1)
+    throw new UnitError('This product is sold by the piece. It has no multi-piece box.')
+  return piecesPerUnit(unit, piecesPerBox)
+}
+
+/** Box-only flows: supplier purchase orders and wholesale orders never use pieces. */
+export const boxOnlyUnitSchema = z.literal('box', {
+  error: 'Purchase orders and wholesale orders are per box only.'
+})
 
 /** Selling price of one unit in pesos. A batch without its own box price sells a box at piece price × pieces. */
 export function unitSellPrice(

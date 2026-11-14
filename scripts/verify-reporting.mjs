@@ -202,6 +202,7 @@ if (!process.env.REPORT_TEST_PHASE) {
             .insertInto('customers')
             .values({
               fullName: discountType === 'senior' ? 'Senior Client' : 'Wholesale Client',
+              clientType: discountType === 'senior' ? 'retail' : 'pharmacy',
               phone: '09171234567',
               email: null,
               address: 'Delivery address',
@@ -248,6 +249,7 @@ if (!process.env.REPORT_TEST_PHASE) {
         requestId: randomUUID(),
         customerId: regular.id,
         dueDate: localDate(),
+        scheduledDate: localDate(),
         deliveryAddress: 'Address',
         notes: '',
         items

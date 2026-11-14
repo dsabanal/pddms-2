@@ -182,6 +182,8 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         .insertInto('customers')
         .values({
           fullName: 'Wholesale Client',
+          clientType: 'pharmacy',
+          contactPerson: 'Receiving Pharmacist',
           phone: '09171234567',
           email: null,
           address: 'Delivery address',
@@ -201,6 +203,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         requestId: randomUUID(),
         customerId: client.id,
         dueDate: localDate(),
+        scheduledDate: localDate(),
         deliveryAddress: client.address,
         notes: 'Wholesale installment order',
         items: lines
@@ -222,7 +225,27 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       assert.equal(canAccessPath('staff', '/wholesale'), true)
       state.session = { account: staff }
       const before = await stock()
+      const retail = await db
+        .insertInto('customers')
+        .values({
+          fullName: 'Counter Customer',
+          phone: '09171234568',
+          email: null,
+          address: 'Retail address',
+          discountType: 'none',
+          discountId: null,
+          discountExpiresAt: null
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow()
+      assert.equal(retail.clientType, 'retail')
+      await bad(channels.wholesale.create, {
+        ...draft,
+        requestId: randomUUID(),
+        customerId: retail.id
+      })
       const id = await ok(channels.wholesale.create, draft)
+      assert.equal((await ok(channels.wholesale.get, id)).status, 'scheduled')
       // Note: New orders cannot be due in the past; age this one so it shows as overdue later.
       await db
         .updateTable('wholesaleOrders')
@@ -250,9 +273,21 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
         { items: [{ ...lines[0], quantity: -1 }] },
         { items: [{ ...lines[0], quantity: 1.5 }] },
         { items: [{ ...lines[0], batchId: 9999 }] },
-        { items: [{ ...lines[0], unitPriceCents: 1 }] }
+        { items: [{ ...lines[0], unitPriceCents: 1 }] },
+        // Wholesale orders are per box only and are scheduled when they are created.
+        { items: [{ ...lines[0], unit: 'piece' }] },
+        { scheduledDate: undefined },
+        { scheduledDate: '2000-01-01' },
+        { scheduledDate: '2026-02-30' }
       ])
         await bad(channels.wholesale.create, { ...draft, requestId: randomUUID(), ...invalid })
+      // Note: Orders saved before scheduling moved into the order form are still "pending"; they
+      // cannot be delivered until someone schedules them.
+      await db
+        .updateTable('wholesaleOrders')
+        .set({ status: 'pending' })
+        .where('id', '=', id)
+        .execute()
       await bad(channels.wholesale.deliver, handoff(id))
       await bad(channels.wholesale.exportReceipt, id)
       const schedule = {

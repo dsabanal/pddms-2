@@ -92,8 +92,8 @@ if (!process.env.UNITS_TEST_PHASE) {
       assert.deepEqual(
         walkIns.map((sale) => [sale.customerName, sale.discountType, sale.discountId]).reverse(),
         [
-          ['Juan Dela Cruz', 'senior', 'SC-2026-0001'],
-          ['Maria Clara', 'pwd', 'PWD-0042']
+          ['Juan Dela Cruz', 'senior', 'SC20260001'],
+          ['Maria Clara', 'pwd', 'PWD0042']
         ]
       )
       const boxSale = (await ok(channels.sales.getOne, sales.at(-1).id)).sale
@@ -147,6 +147,7 @@ if (!process.env.UNITS_TEST_PHASE) {
         .insertInto('customers')
         .values({
           fullName: 'Clinic Client',
+          clientType: 'pharmacy',
           phone: '09171112222',
           email: null,
           address: 'Clinic Street',
@@ -196,10 +197,11 @@ if (!process.env.UNITS_TEST_PHASE) {
       assert.equal(boxed.piecesPerBox, 10)
       assert.equal(loose.piecesPerBox, 1)
 
-      // Purchase orders: box lines need a boxed product; quantity and cost are per box.
+      // Purchase orders are per box only; quantity and cost are per box. A product sold loose
+      // has a box of 1.
       await bad(channels.purchaseOrder.createOne, {
         supplierId: supplier.id,
-        items: [{ drugId: loose.id, quantity: 1, unitCost: 10, unit: 'box' }]
+        items: [{ drugId: boxed.id, quantity: 1, unitCost: 10, unit: 'piece' }]
       })
       const order = (
         await ok(channels.purchaseOrder.createOne, {
@@ -215,7 +217,7 @@ if (!process.env.UNITS_TEST_PHASE) {
         order.items.map((item) => [item.unit, item.piecesPerUnit]),
         [
           ['box', 10],
-          ['piece', 1]
+          ['box', 1]
         ]
       )
       assert.equal(order.submittedByName, null)
@@ -449,9 +451,10 @@ if (!process.env.UNITS_TEST_PHASE) {
       assert.equal(sale.customerId, null)
       assert.equal(sale.customerName, 'Juan Dela Cruz')
       assert.equal(sale.discountType, 'senior')
-      assert.equal(sale.discountId, 'SC-2026-0001')
+      // Note: Separators typed on the ID are dropped; discount IDs keep letters and numbers only.
+      assert.equal(sale.discountId, 'SC20260001')
       assert.equal(sale.totalCents, discounted)
-      assert.match(receiptText(sale), /Senior Citizen ID: SC-2026-0001 \(walk-in/)
+      assert.match(receiptText(sale), /Senior Citizen ID: SC20260001 \(walk-in/)
       // Retrying the same request is idempotent; reusing it for another ID is refused.
       assert.equal((await ok(channels.sales.checkout, request)).sale.id, sale.id)
       await bad(channels.sales.checkout, {
@@ -476,15 +479,22 @@ if (!process.env.UNITS_TEST_PHASE) {
 
       // Wholesale: a box line deducts its pieces on delivery and records every hand-off.
       state.session = { account: admin }
+      const wholesaleDraft = (items) => ({
+        requestId: randomUUID(),
+        customerId: customer.id,
+        dueDate: '2099-01-01',
+        scheduledDate: localDate(),
+        deliveryAddress: 'Clinic Street',
+        notes: '',
+        items
+      })
       const orderId = (
-        await ok(channels.wholesale.create, {
-          requestId: randomUUID(),
-          customerId: customer.id,
-          dueDate: '2099-01-01',
-          deliveryAddress: 'Clinic Street',
-          notes: '',
-          items: [{ batchId: looseBatch.id, quantity: 2, unit: 'piece', unitPriceCents: 2500 }]
-        })
+        await ok(
+          channels.wholesale.create,
+          wholesaleDraft([
+            { batchId: looseBatch.id, quantity: 2, unit: 'box', unitPriceCents: 2500 }
+          ])
+        )
       ).data
       await ok(channels.wholesale.schedule, {
         orderId,
@@ -511,32 +521,25 @@ if (!process.env.UNITS_TEST_PHASE) {
       assert.equal(delivered.receivedByName, 'Ana Pharmacist')
       assert.match(deliveryReceiptText(delivered), /Received by: Ana Pharmacist/)
       assert.equal(await stock(looseBatch.id), 15)
-      await bad(channels.wholesale.create, {
-        requestId: randomUUID(),
-        customerId: customer.id,
-        dueDate: '2099-01-01',
-        deliveryAddress: 'Clinic Street',
-        notes: '',
-        items: [{ batchId: looseBatch.id, quantity: 1, unit: 'box', unitPriceCents: 2500 }]
-      })
+      // Wholesale orders are per box only.
+      await bad(
+        channels.wholesale.create,
+        wholesaleDraft([
+          { batchId: looseBatch.id, quantity: 1, unit: 'piece', unitPriceCents: 2500 }
+        ])
+      )
       // Only 8 pieces remain in the boxed batch, so a 10-piece box cannot be ordered.
-      await bad(channels.wholesale.create, {
-        requestId: randomUUID(),
-        customerId: customer.id,
-        dueDate: '2099-01-01',
-        deliveryAddress: 'Clinic Street',
-        notes: '',
-        items: [{ batchId: boxBatch.id, quantity: 1, unit: 'box', unitPriceCents: 55000 }]
-      })
+      await bad(
+        channels.wholesale.create,
+        wholesaleDraft([{ batchId: boxBatch.id, quantity: 1, unit: 'box', unitPriceCents: 55000 }])
+      )
       const boxOrder = (
-        await ok(channels.wholesale.create, {
-          requestId: randomUUID(),
-          customerId: customer.id,
-          dueDate: '2099-01-01',
-          deliveryAddress: 'Clinic Street',
-          notes: '',
-          items: [{ batchId: boxBatch.id, quantity: 8, unit: 'piece', unitPriceCents: 6000 }]
-        })
+        await ok(
+          channels.wholesale.create,
+          wholesaleDraft([
+            { batchId: looseBatch.id, quantity: 1, unit: 'box', unitPriceCents: 2500 }
+          ])
+        )
       ).data
       await ok(channels.wholesale.cancel, boxOrder)
       const cancelledOrder = (await ok(channels.wholesale.get, boxOrder)).data
@@ -545,7 +548,7 @@ if (!process.env.UNITS_TEST_PHASE) {
 
       await reconcile()
       console.log(
-        'PASS: pieces per box, box purchase orders / receiving / batch top-up, box and piece sales and wholesale, walk-in Senior/PWD validation / idempotency / receipt, handled-by on POs, deliveries and wholesale'
+        'PASS: pieces per box, box-only purchase orders / receiving / batch top-up, box and piece sales, box-only wholesale, walk-in Senior/PWD validation / idempotency / receipt, handled-by on POs, deliveries and wholesale'
       )
     }
   } finally {

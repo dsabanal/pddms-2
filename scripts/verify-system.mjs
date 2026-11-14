@@ -245,6 +245,7 @@ if (!process.env.SYSTEM_TEST_PHASE) {
       assert.equal((await ok(channels.setup.getStatus)).requiresSetup, true)
       await ok(channels.setup.createMaster, {
         fullName: 'System Admin',
+        email: 'system.admin@example.com',
         username: 'system-admin',
         password: 'DisposableTest123'
       })

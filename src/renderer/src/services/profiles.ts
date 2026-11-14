@@ -22,7 +22,11 @@ interface Result<T> {
   product?: T
 }
 
-interface CustomerPayload extends Omit<CustomerDraft, 'email' | 'address' | 'discountId'> {
+interface CustomerPayload extends Omit<
+  CustomerDraft,
+  'email' | 'address' | 'discountId' | 'contactPerson'
+> {
+  contactPerson: string | null
   email: string | null
   address: string | null
   discountId: string | null
@@ -32,7 +36,8 @@ const customerPayload = (customer: CustomerDraft): CustomerPayload => ({
   ...customer,
   email: customer.email || null,
   address: customer.address || null,
-  discountId: customer.discountId || null
+  discountId: customer.discountId || null,
+  contactPerson: customer.contactPerson || null
 })
 
 const mapCustomer = (customer: CustomerProfile): CustomerProfile => ({
@@ -40,6 +45,8 @@ const mapCustomer = (customer: CustomerProfile): CustomerProfile => ({
   email: customer.email ?? '',
   address: customer.address ?? '',
   discountId: customer.discountId ?? '',
+  clientType: customer.clientType ?? 'retail',
+  contactPerson: customer.contactPerson ?? '',
   transactions: customer.transactions ?? []
 })
 

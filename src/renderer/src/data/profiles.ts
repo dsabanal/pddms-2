@@ -38,9 +38,15 @@ export interface CustomerTransaction {
   total: number
 }
 
+export type ClientType = 'retail' | 'pharmacy'
+
 export interface CustomerProfile {
   id: number
+  /** Retail customer, or a pharmacy that buys wholesale. */
+  clientType: ClientType
+  /** Pharmacy name for pharmacy clients. */
   fullName: string
+  contactPerson: string
   phone: string
   email: string
   address: string

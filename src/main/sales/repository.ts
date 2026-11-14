@@ -15,7 +15,7 @@ import {
   type SaleTotals
 } from '@shared/sales'
 import type { Database } from '@shared/types'
-import { piecesPerUnit, UnitError, unitSellPrice } from '@shared/units'
+import { saleUnitPieces, UnitError, unitSellPrice } from '@shared/units'
 import type { Kysely } from 'kysely'
 import { randomUUID } from 'node:crypto'
 
@@ -76,7 +76,7 @@ async function prepare(
     let pieces: number
     let unitPrice: number
     try {
-      pieces = piecesPerUnit(item.unit, batch.piecesPerBox)
+      pieces = saleUnitPieces(item.unit, batch.piecesPerBox)
       unitPrice = unitSellPrice(item.unit, batch.sellPrice, batch.boxSellPrice, batch.piecesPerBox)
     } catch (error) {
       if (error instanceof UnitError) throw new SalesError(`${batch.brandName}: ${error.message}`)

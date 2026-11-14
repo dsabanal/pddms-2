@@ -1,5 +1,7 @@
 import DashboardShell from '@renderer/components/dashboard/DashboardShell'
 import { useConfirm } from '@renderer/components/ui/ConfirmDialog'
+import FilteredInput from '@renderer/components/ui/FilteredInput'
+import { RequiredNote } from '@renderer/components/ui/FormField'
 import { splitErrors, type FieldErrors } from '@renderer/components/ui/fieldErrors'
 import {
   roleLabels,
@@ -41,13 +43,13 @@ export default function UserManagement(): ReactElement {
   }, [management.users, query, role])
 
   return (
-    <DashboardShell pageTitle="User management">
+    <DashboardShell pageTitle="User Management">
       <div className="space-y-5 lg:space-y-6">
         <section className="page-intro">
           <div className="page-intro-content flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="eyebrow">Account & admin</p>
-              <h2 className="page-title mt-0.5">User management</h2>
+              <h2 className="page-title mt-0.5">User Management</h2>
               <p className="page-subtitle">
                 Create staff and cashier accounts, and block access for anyone who should no longer
                 sign in.
@@ -59,23 +61,23 @@ export default function UserManagement(): ReactElement {
                 onClick={() => void management.load()}
                 className="secondary-button"
               >
-                Refresh accounts
+                Refresh Accounts
               </button>
               <button onClick={() => setCreating(true)} className="primary-button">
-                <FiPlus /> Create user
+                <FiPlus /> Create User
               </button>
             </div>
           </div>
         </section>
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <Metric label="Total accounts" value={management.users.length} icon={<FiUsers />} />
+          <Metric label="Total Accounts" value={management.users.length} icon={<FiUsers />} />
           <Metric
-            label="Active accounts"
+            label="Active Accounts"
             value={management.users.filter((user) => user.status === 'active').length}
             icon={<FiShield />}
           />
           <Metric
-            label="Blocked accounts"
+            label="Blocked Accounts"
             value={management.users.filter((user) => user.status === 'blocked').length}
             icon={<FiShield />}
           />
@@ -141,7 +143,10 @@ export default function UserManagement(): ReactElement {
                   >
                     <td className="px-5 py-4">
                       <p className="font-semibold">{user.fullName}</p>
-                      <p className="text-xs text-slate-500">@{user.username}</p>
+                      <p className="text-xs text-slate-500">
+                        @{user.username}
+                        {user.email ? ` · ${user.email}` : ''}
+                      </p>
                     </td>
                     <td className="px-5 py-4">
                       <span
@@ -298,6 +303,7 @@ function CreateUserDialog({
   const [values, setValues] = useState<UserFormValues>({
     fullName: '',
     username: '',
+    email: '',
     role: 'staff',
     password: ''
   })
@@ -313,7 +319,8 @@ function CreateUserDialog({
       await save({
         ...values,
         fullName: values.fullName.trim(),
-        username: values.username.trim().toLowerCase()
+        username: values.username.trim().toLowerCase(),
+        email: values.email.trim().toLowerCase()
       })
     } catch (cause) {
       const { fields, form } = splitErrors(cause, 'Unable to create the account.')
@@ -323,32 +330,45 @@ function CreateUserDialog({
     }
   }
   return (
-    <Dialog title="Create user account" close={close}>
+    <Dialog title="Create User Account" close={close}>
       <form noValidate onSubmit={(event) => void submit(event)} className="space-y-4">
-        <Field label="Full name" error={fieldErrors.fullName}>
-          <input
+        <RequiredNote />
+        <Field label="Full Name" required error={fieldErrors.fullName}>
+          <FilteredInput
+            rule="personName"
             required
             minLength={2}
             maxLength={120}
-            className="field"
             placeholder={'e.g. Juan Dela Cruz'}
             value={values.fullName}
-            onChange={(event) => setValues({ ...values, fullName: event.target.value })}
+            onValueChange={(fullName) => setValues({ ...values, fullName })}
           />
         </Field>
-        <Field label="Username" error={fieldErrors.username}>
-          <input
+        <Field label="Email" required error={fieldErrors.email}>
+          <FilteredInput
+            rule="email"
+            required
+            type="email"
+            maxLength={254}
+            autoComplete="email"
+            placeholder={'e.g. juan@example.com'}
+            value={values.email}
+            onValueChange={(email) => setValues({ ...values, email })}
+          />
+        </Field>
+        <Field label="Username" required error={fieldErrors.username}>
+          <FilteredInput
+            rule="username"
             required
             minLength={4}
             autoComplete="username"
-            className="field"
             maxLength={32}
             placeholder={'e.g. juan.delacruz'}
             value={values.username}
-            onChange={(event) => setValues({ ...values, username: event.target.value })}
+            onValueChange={(username) => setValues({ ...values, username })}
           />
         </Field>
-        <Field label="Role" error={fieldErrors.role}>
+        <Field label="Role" required error={fieldErrors.role}>
           <select
             className="field"
             value={values.role}
@@ -363,7 +383,7 @@ function CreateUserDialog({
               ))}
           </select>
         </Field>
-        <Field label="Temporary password" error={fieldErrors.password}>
+        <Field label="Temporary Password" required error={fieldErrors.password}>
           <input
             required
             minLength={8}
@@ -389,7 +409,7 @@ function CreateUserDialog({
             Cancel
           </button>
           <button disabled={saving} className="primary-button">
-            {saving ? 'Creating…' : 'Create account'}
+            {saving ? 'Creating…' : 'Create Account'}
           </button>
         </div>
       </form>
@@ -409,6 +429,7 @@ function EditUserDialog({
   const [values, setValues] = useState<UserUpdateValues>({
     fullName: user.fullName,
     username: user.username,
+    email: user.email,
     role: user.role,
     password: ''
   })
@@ -425,7 +446,8 @@ function EditUserDialog({
       await save({
         ...values,
         fullName: values.fullName.trim(),
-        username: values.username.trim().toLowerCase()
+        username: values.username.trim().toLowerCase(),
+        email: values.email.trim().toLowerCase()
       })
     } catch (cause) {
       const { fields, form } = splitErrors(cause, 'Unable to update the account.')
@@ -436,32 +458,49 @@ function EditUserDialog({
   }
 
   return (
-    <Dialog title={'Edit user account'} close={close}>
+    <Dialog title={'Edit User Account'} close={close}>
       <form noValidate onSubmit={(event) => void submit(event)} className={'space-y-4'}>
-        <Field label={'Full name'} error={fieldErrors.fullName}>
-          <input
+        <RequiredNote />
+        <Field label={'Full Name'} required error={fieldErrors.fullName}>
+          <FilteredInput
+            rule="personName"
             required
             minLength={2}
             maxLength={120}
-            className={'field'}
             placeholder={'e.g. Juan Dela Cruz'}
             value={values.fullName}
-            onChange={(event) => setValues({ ...values, fullName: event.target.value })}
+            onValueChange={(fullName) => setValues({ ...values, fullName })}
           />
         </Field>
-        <Field label={'Username'} error={fieldErrors.username}>
-          <input
+        <Field
+          label={'Email'}
+          required={!!user.email}
+          error={fieldErrors.email}
+          hint={user.email ? undefined : 'This account has no email yet. Add one now.'}
+        >
+          <FilteredInput
+            rule="email"
+            type="email"
+            maxLength={254}
+            autoComplete="email"
+            placeholder={'e.g. juan@example.com'}
+            value={values.email}
+            onValueChange={(email) => setValues({ ...values, email })}
+          />
+        </Field>
+        <Field label={'Username'} required error={fieldErrors.username}>
+          <FilteredInput
+            rule="username"
             required
             minLength={4}
             maxLength={32}
             autoComplete={'username'}
-            className={'field'}
             placeholder={'e.g. juan.delacruz'}
             value={values.username}
-            onChange={(event) => setValues({ ...values, username: event.target.value })}
+            onValueChange={(username) => setValues({ ...values, username })}
           />
         </Field>
-        <Field label={'Role'} error={fieldErrors.role}>
+        <Field label={'Role'} required error={fieldErrors.role}>
           <select
             className={'field'}
             value={values.role}
@@ -471,7 +510,7 @@ function EditUserDialog({
             <option value={'cashier'}>{roleLabels.cashier}</option>
           </select>
         </Field>
-        <Field label={'New password (optional)'} error={fieldErrors.password}>
+        <Field label={'New Password'} error={fieldErrors.password}>
           <input
             minLength={8}
             maxLength={128}
@@ -498,7 +537,7 @@ function EditUserDialog({
             Cancel
           </button>
           <button disabled={saving} className={'primary-button'}>
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </form>
@@ -552,7 +591,7 @@ function DeleteUserDialog({
             onClick={() => void remove()}
             className="danger-button disabled:opacity-60"
           >
-            {deleting ? 'Deleting…' : 'Delete account'}
+            {deleting ? 'Deleting…' : 'Delete Account'}
           </button>
         </div>
       </div>
@@ -565,6 +604,7 @@ function UserDetails({ user, close }: { user: ManagedUser; close: VoidFunction }
     <Dialog title={user.fullName} close={close}>
       <dl className="grid gap-4 sm:grid-cols-2">
         <Detail label="Username" value={`@${user.username}`} />
+        <Detail label="Email" value={user.email || 'Not recorded'} />
         <Detail label="Role" value={roleLabels[user.role]} />
         <Detail
           label="Status"
@@ -576,7 +616,7 @@ function UserDetails({ user, close }: { user: ManagedUser; close: VoidFunction }
                 : 'Blocked'
           }
         />
-        <Detail label="Failed sign-in attempts" value={String(user.failedAttempts)} />
+        <Detail label="Failed Sign-In Attempts" value={String(user.failedAttempts)} />
         <Detail label="Verification" value={user.verified ? 'Verified' : 'Unverified'} />
       </dl>
     </Dialog>
@@ -617,24 +657,37 @@ function Dialog({
 function Field({
   label,
   error,
+  hint,
+  required = false,
   children
 }: {
   label: string
   error?: string
+  hint?: string
+  required?: boolean
   children: ReactElement
 }): ReactElement {
   const id = useId()
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700">
+      <label className="field-label">
         {label}
-        <span className="mt-1.5 block">
+        {required ? (
+          <span className="required-mark" aria-hidden="true">
+            *
+          </span>
+        ) : (
+          <span className="ml-1 text-xs font-normal text-slate-400">(optional)</span>
+        )}
+        <span className="mt-1.5 block font-normal">
           {cloneElement(children as ReactElement<Record<string, unknown>>, {
+            'aria-required': required || undefined,
             'aria-invalid': error ? true : undefined,
             'aria-describedby': error ? `${id}-error` : undefined
           })}
         </span>
       </label>
+      {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       {error && (
         <p id={`${id}-error`} className="mt-1 text-xs font-medium text-rose-700">
           {error}
