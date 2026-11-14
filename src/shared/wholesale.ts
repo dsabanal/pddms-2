@@ -1,29 +1,15 @@
 import z from 'zod'
 import { localDate } from './inventory'
 import { cartLineSchema, centsSchema, lineText, money, type SaleLine } from './sales'
-import { isoDateSchema } from './schemas'
+import { isoDateSchema, paymentMethodSchema } from './schemas'
+import { boxOnlyUnitSchema } from './units'
 
 export class WholesaleError extends Error {}
 export const orderStatuses = ['pending', 'scheduled', 'delivered', 'cancelled'] as const
 export type WholesaleStatus = (typeof orderStatuses)[number]
 const id = z.number().int().positive()
-export const wholesaleOrderSchema = z
-  .strictObject({
-    requestId: z.string().uuid(),
-    customerId: id,
-    dueDate: isoDateSchema('Enter a valid payment due date.'),
-    deliveryAddress: z.string().trim().min(1, 'Delivery address is required.').max(500),
-    notes: z.string().trim().max(500),
-    items: z.array(cartLineSchema).min(1, 'Add at least one product.').max(200)
-  })
-  .refine(
-    (value) => new Set(value.items.map((item) => item.batchId)).size === value.items.length,
-    'Each batch must appear only once.'
-  )
-  .refine((value) => value.dueDate >= localDate(), {
-    path: ['dueDate'],
-    message: 'The payment due date cannot be before the order date (today).'
-  })
+// Note: Wholesale is sold to other pharmacies by the box only.
+const wholesaleLineSchema = cartLineSchema.extend({ unit: boxOnlyUnitSchema.default('box') })
 // Note: Names of people outside the system (drivers, client staff) are typed, not picked from accounts.
 const personName = z
   .string()
@@ -34,6 +20,34 @@ const personName = z
     'Use letters, spaces, periods, commas, apostrophes or hyphens.'
   )
 const requiredPersonName = (message: string): z.ZodString => personName.min(2, message)
+export const wholesaleOrderSchema = z
+  .strictObject({
+    requestId: z.string().uuid(),
+    customerId: z
+      .number({ error: 'Select a pharmacy client.' })
+      .int()
+      .positive('Select a pharmacy client.'),
+    dueDate: isoDateSchema('Enter a valid payment due date.'),
+    deliveryAddress: z.string().trim().min(1, 'Delivery address is required.').max(500),
+    notes: z.string().trim().max(500),
+    // Note: Delivery is scheduled while the order is created, in the same step.
+    scheduledDate: isoDateSchema('Enter a valid delivery date.'),
+    deliveryNotes: z.string().trim().max(500).default(''),
+    driverName: personName.default(''),
+    items: z.array(wholesaleLineSchema).min(1, 'Add at least one product.').max(200)
+  })
+  .refine(
+    (value) => new Set(value.items.map((item) => item.batchId)).size === value.items.length,
+    'Each batch must appear only once.'
+  )
+  .refine((value) => value.dueDate >= localDate(), {
+    path: ['dueDate'],
+    message: 'The payment due date cannot be before the order date (today).'
+  })
+  .refine((value) => value.scheduledDate >= localDate(), {
+    path: ['scheduledDate'],
+    message: 'The delivery date cannot be before the order date (today).'
+  })
 export const wholesaleScheduleSchema = z.strictObject({
   orderId: id,
   scheduledDate: isoDateSchema('Enter a valid delivery date.'),
@@ -52,8 +66,16 @@ export const wholesalePaymentSchema = z
     orderId: id,
     amountCents: centsSchema.refine((value) => value > 0, 'Payment must be greater than zero.'),
     paidAt: isoDateSchema('Enter a valid payment date.'),
-    reference: z.string().trim().min(1, 'Payment reference is required.').max(120),
-    method: z.string().trim().min(1).max(80),
+    reference: z
+      .string()
+      .trim()
+      .min(1, 'Payment reference is required.')
+      .max(120, 'Payment reference must be 120 characters or fewer.')
+      .regex(
+        /^[A-Za-z0-9][A-Za-z0-9 ./#_()-]*$/,
+        'Payment reference may use only letters, numbers, spaces and - / . # _ ( ).'
+      ),
+    method: paymentMethodSchema,
     notes: z.string().trim().max(500)
   })
   .refine((value) => value.paidAt <= localDate(), {
@@ -66,7 +88,7 @@ export const wholesaleListSchema = z.strictObject({
   status: z.enum(orderStatuses).optional(),
   overdue: z.boolean().default(false)
 })
-export type WholesaleDraft = z.infer<typeof wholesaleOrderSchema>
+export type WholesaleDraft = z.input<typeof wholesaleOrderSchema>
 export type WholesaleSchedule = z.input<typeof wholesaleScheduleSchema>
 export type WholesaleDelivery = z.infer<typeof wholesaleDeliverSchema>
 export type WholesalePaymentInput = z.infer<typeof wholesalePaymentSchema>
@@ -144,7 +166,7 @@ export function deliveryReceiptText(order: WholesaleDetails): string {
   if (order.status !== 'delivered' || !order.deliveredAt)
     throw new WholesaleError('Record delivery before generating proof of delivery.')
   return [
-    'Med Prix Drug Distributor and Pharmacy',
+    'Med Prix Distributor and Pharmacy',
     'G Mesa St, General Santos City (Dadiangas), South Cotabato',
     'DELIVERY RECEIPT',
     `DR-${order.reference}`,

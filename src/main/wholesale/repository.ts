@@ -140,7 +140,7 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
   const { requestId, ...values } = data
   const fingerprint = JSON.stringify(values)
   return db.transaction().execute(async (transaction) => {
-    await activeAccount(transaction, accountId)
+    const creatorName = await activeAccount(transaction, accountId)
     const existing = await transaction
       .selectFrom('wholesaleOrders')
       .selectAll()
@@ -156,7 +156,11 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
       .selectAll()
       .where('id', '=', data.customerId)
       .executeTakeFirst()
-    if (!customer) throw new WholesaleError('Select an existing customer.')
+    if (!customer) throw new WholesaleError('Select an existing pharmacy client.')
+    if (customer.clientType !== 'pharmacy')
+      throw new WholesaleError(
+        `${customer.fullName} is a retail customer. Wholesale orders are for pharmacy clients only.`
+      )
     const batches = await transaction
       .selectFrom('batches')
       .innerJoin('drugs', 'drugs.id', 'batches.drugId')
@@ -235,16 +239,16 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
         orderDate: localDate(),
         dueDate: data.dueDate,
         totalCents,
-        status: 'pending',
+        status: 'scheduled',
         notes: data.notes,
         deliveryAddress: data.deliveryAddress,
-        deliveryNotes: '',
-        scheduledDate: null,
+        deliveryNotes: data.deliveryNotes,
+        scheduledDate: data.scheduledDate,
         deliveredAt: null,
         deliveredByName: null,
-        scheduledByName: null,
-        scheduledAt: null,
-        driverName: null,
+        scheduledByName: creatorName,
+        scheduledAt: new Date().toISOString(),
+        driverName: data.driverName || null,
         receivedByName: null,
         cancelledByName: null,
         cancelledAt: null

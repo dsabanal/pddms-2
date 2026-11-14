@@ -5,6 +5,7 @@ import { windowDialog } from '@main/api/dialogs'
 import { ipcMain } from '@main/api/ipc'
 import { channels, resources } from '@shared/constants'
 import { SalesError } from '@shared/sales'
+import { describeIssue } from '@shared/validation'
 import {
   deliveryReceiptText,
   wholesaleDeliverSchema,
@@ -66,9 +67,7 @@ function handle(
           error instanceof WholesaleError || error instanceof SalesError
             ? error.message
             : error instanceof z.ZodError
-              ? error.issues
-                  .map((issue) => `${issue.path.join('.') || 'Order'}: ${issue.message}`)
-                  .join(' ')
+              ? [...new Set(error.issues.map(describeIssue))].join(' ')
               : 'Wholesale operation failed or access denied. Reload the order before retrying.'
       }
     }

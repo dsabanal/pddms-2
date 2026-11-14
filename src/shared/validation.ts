@@ -55,7 +55,15 @@ export const fieldNames: Record<string, string> = {
   reference: 'Payment reference',
   amountCents: 'Amount',
   cashCents: 'Cash received',
-  customerId: 'Customer'
+  customerId: 'Client',
+  deliveredByName: 'Delivered by (supplier)',
+  checkedByName: 'Checked by',
+  driverName: 'Driver or courier',
+  receivedByName: 'Received by',
+  holderName: 'Name on ID',
+  contactPerson: 'Contact person',
+  clientType: 'Client type',
+  role: 'Role'
 }
 
 // Note: Field-specific wording for format rules a generic message cannot explain.
@@ -76,6 +84,19 @@ const formatMessages: Record<string, string> = {
   batchNumber: 'Batch number may use only letters, numbers, spaces and - / . # _ ( ).',
   invoiceNumber: 'Invoice number may use only letters, numbers, spaces and - / . # _ ( ).',
   referenceNumber: 'Reference number may use only letters, numbers, spaces and - / . # _ ( ).',
+  deliveredByName:
+    'Delivered by (supplier) may use only letters, spaces, periods, commas, apostrophes or hyphens, e.g. Juan Dela Cruz.',
+  checkedByName:
+    'Checked by may use only letters, spaces, periods, commas, apostrophes or hyphens, e.g. Maria Santos.',
+  driverName:
+    'Driver or courier may use only letters, spaces, periods, commas, apostrophes or hyphens.',
+  receivedByName:
+    'Received by may use only letters, spaces, periods, commas, apostrophes or hyphens.',
+  holderName: 'Name on ID may use only letters, spaces, periods, commas, apostrophes or hyphens.',
+  contactPerson:
+    'Contact person may use only letters, spaces, periods, commas, apostrophes or hyphens.',
+  discountId: 'Discount ID may use only letters and numbers, as printed on the ID.',
+  method: 'Select a payment method from the list.',
   fileToken: 'Invoice file is required. Choose the invoice document to attach.',
   requestId: 'The form expired. Close it and try again.'
 }
@@ -101,6 +122,9 @@ const issueField = (issue: z.core.$ZodIssue): string =>
  */
 export function describeIssue(issue: z.core.$ZodIssue): string {
   if (issue.code === 'custom') return issue.message
+  // Note: A message written on the schema rule explains the exact problem; only Zod's own
+  // generic wording ("Invalid string…", "Too small…") is replaced below.
+  if (!isGenericMessage(issue.message)) return issue.message
   const field = issueField(issue)
   const name = fieldNames[field] ?? 'This field'
   const isAmount = amountFields.has(field)
@@ -113,7 +137,7 @@ export function describeIssue(issue: z.core.$ZodIssue): string {
       return received === 'NaN'
         ? `Enter a number for ${name.toLowerCase()}.`
         : `${name} must be a finite number.`
-    return `${name} is invalid.`
+    return `${name} has the wrong kind of value. Re-enter it.`
   }
   if (issue.code === 'too_small') {
     const minimum = Number(issue.minimum)
@@ -131,12 +155,18 @@ export function describeIssue(issue: z.core.$ZodIssue): string {
     if (issue.origin === 'string') return `${name} must be ${maximum} characters or fewer.`
     return `${name} cannot exceed ${isAmount ? '₱' : ''}${number.format(maximum)}.`
   }
-  if (issue.code === 'invalid_format' || issue.code === 'invalid_value')
-    return formatMessages[field] ?? `${name} is invalid.`
+  if (issue.code === 'invalid_value')
+    return formatMessages[field] ?? `Select a valid ${name.toLowerCase()} from the list.`
+  if (issue.code === 'invalid_format')
+    return formatMessages[field] ?? `${name} contains characters that are not allowed.`
   if (issue.code === 'unrecognized_keys')
     return 'The form sent unexpected data. Reload and try again.'
-  return formatMessages[field] ?? `${name} is invalid.`
+  return formatMessages[field] ?? `Check ${name.toLowerCase()} and try again.`
 }
+
+/** Zod's built-in messages; anything else was written for the field and is shown as is. */
+const isGenericMessage = (message: string): boolean =>
+  /^(Invalid|Too (small|big)|Unrecognized|Expected|Required)\b/i.test(message)
 
 /**
  * Lists every schema issue with its field path, for showing errors beside the affected inputs.

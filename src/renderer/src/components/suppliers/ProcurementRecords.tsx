@@ -1,4 +1,5 @@
 import { splitErrors, type FieldErrors } from '@renderer/components/ui/fieldErrors'
+import FilteredInput from '@renderer/components/ui/FilteredInput'
 import FormField, { FormError, RequiredNote } from '@renderer/components/ui/FormField'
 import Modal from '@renderer/components/ui/Modal'
 import type {
@@ -13,6 +14,7 @@ import type {
 import { deadlineLabels, deadlineTone, orderStatusLabels } from '@renderer/data/supplierOrders'
 import type { SupplierOrdersState } from '@renderer/hooks/useSupplierOrders'
 import { localDate } from '@shared/inventory'
+import { paymentMethods } from '@shared/schemas'
 import { useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react'
 import {
   FiAlertCircle,
@@ -75,7 +77,7 @@ export default function ProcurementRecords({
           icon={<FiAlertCircle />}
         />
         <InvoiceMetric
-          label="Due in 7 days"
+          label="Due in 7 Days"
           value={dueSoon.length}
           tone="text-amber-700"
           icon={<FiClock />}
@@ -86,20 +88,20 @@ export default function ProcurementRecords({
           onClick={() => setPaymentDialog({})}
           disabled={!procurement.paymentSummaries.some((summary) => summary.outstandingAmount > 0)}
         >
-          <FiCreditCard /> Record payment
+          <FiCreditCard /> Record Payment
         </button>
         <button
           type="button"
           className="primary-button justify-center"
           onClick={() => setInvoiceDialog(true)}
         >
-          <FiFilePlus /> Add supplier invoice
+          <FiFilePlus /> Add Supplier Invoice
         </button>
       </div>
       <section className="border-b border-slate-200 p-4">
         <div className="mb-3">
-          <h3 className="font-semibold text-slate-900">Balances owed to suppliers</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="section-title text-lg">Balances Owed to Suppliers</h3>
+          <p className="section-subtitle">
             Based on the products actually received for each purchase order. You can record a
             payment before the supplier invoice is added.
           </p>
@@ -159,7 +161,7 @@ export default function ProcurementRecords({
                   className="secondary-button mt-3 w-full justify-center text-xs"
                   onClick={() => setPaymentDialog({ summary })}
                 >
-                  <FiCreditCard /> Record payment
+                  <FiCreditCard /> Record Payment
                 </button>
               )}
             </article>
@@ -173,8 +175,8 @@ export default function ProcurementRecords({
         </div>
       </section>
       <div className="border-b border-slate-200 px-4 py-3">
-        <h3 className="font-semibold text-slate-900">Supplier invoices</h3>
-        <p className="text-xs text-slate-500">
+        <h3 className="section-title text-lg">Supplier Invoices</h3>
+        <p className="section-subtitle">
           Invoice documents attached to purchase orders, with their due dates and amounts paid.
         </p>
       </div>
@@ -191,8 +193,8 @@ export default function ProcurementRecords({
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="px-3 py-3">Invoice</th>
-              <th className="px-3 py-3">Supplier / order</th>
-              <th className="px-3 py-3">Due date</th>
+              <th className="px-3 py-3">Supplier / Order</th>
+              <th className="px-3 py-3">Due Date</th>
               <th className="px-3 py-3">Payment</th>
               <th className="hidden px-3 py-3 xl:table-cell">File</th>
               <th className="px-3 py-3 text-right">Actions</th>
@@ -305,7 +307,7 @@ export default function ProcurementRecords({
                           })
                         }
                       >
-                        <FiCreditCard /> Record payment
+                        <FiCreditCard /> Record Payment
                       </button>
                     )}
                   </div>
@@ -370,8 +372,8 @@ function ReceivingReports({
   return (
     <div className="space-y-4 p-4 sm:p-5">
       <div>
-        <h3 className="font-semibold text-slate-900">Receiving reports</h3>
-        <p className="text-sm text-slate-500">
+        <h3 className="section-title text-lg">Receiving Reports</h3>
+        <p className="section-subtitle">
           Each report is one recorded delivery and the inventory batches it added stock to.
         </p>
       </div>
@@ -659,7 +661,7 @@ function InvoiceDialog({
 
   return (
     <Modal
-      title="Add supplier invoice"
+      title="Add Supplier Invoice"
       description="Record the supplier's invoice and attach the document they provided."
       close={close}
       busy={saving || choosing}
@@ -669,7 +671,7 @@ function InvoiceDialog({
         {eligibleOrders.length === 0 && (
           <FormError message="Submit a purchase order before attaching a supplier invoice." />
         )}
-        <FormField label="Purchase order" required error={errors.purchaseOrderId}>
+        <FormField label="Purchase Order" required error={errors.purchaseOrderId}>
           <select
             className="field"
             value={purchaseOrderId}
@@ -689,20 +691,20 @@ function InvoiceDialog({
           </select>
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Invoice number" required error={errors.invoiceNumber}>
-            <input
-              className="field"
+          <FormField label="Invoice Number" required error={errors.invoiceNumber}>
+            <FilteredInput
+              rule="reference"
               maxLength={80}
               placeholder="e.g. SI-2026-0042"
               value={invoiceNumber}
-              onChange={(event) => {
-                setInvoiceNumber(event.target.value)
+              onValueChange={(value) => {
+                setInvoiceNumber(value)
                 clear('invoiceNumber')
               }}
             />
           </FormField>
           <FormField
-            label="Invoice amount (₱)"
+            label="Invoice Amount (₱)"
             required
             hint={selectedOrder ? `Order total ${currency.format(selectedOrder.totalAmount)}` : ''}
             error={errors.amount}
@@ -720,7 +722,7 @@ function InvoiceDialog({
               }}
             />
           </FormField>
-          <FormField label="Invoice date" required error={errors.invoiceDate}>
+          <FormField label="Invoice Date" required error={errors.invoiceDate}>
             <input
               type="date"
               max={today()}
@@ -733,7 +735,7 @@ function InvoiceDialog({
             />
           </FormField>
           <FormField
-            label="Payment due date"
+            label="Payment Due Date"
             required
             hint="On or after the invoice date."
             error={errors.dueDate}
@@ -751,7 +753,7 @@ function InvoiceDialog({
           </FormField>
         </div>
         <FormField
-          label="Invoice document"
+          label="Invoice Document"
           required
           hint="PDF, PNG, JPEG or WebP. A copy is stored with the record."
           error={errors.fileToken}
@@ -774,7 +776,7 @@ function InvoiceDialog({
         <Actions
           close={close}
           saving={saving}
-          label="Save supplier invoice"
+          label="Save Supplier Invoice"
           disabled={eligibleOrders.length === 0 || choosing}
         />
       </form>
@@ -868,7 +870,7 @@ function PaymentDialog({
 
   return (
     <Modal
-      title="Record supplier payment"
+      title="Record Supplier Payment"
       description="Payments are recorded against the value of stock already delivered. Linking an invoice is optional."
       close={close}
       busy={saving}
@@ -899,7 +901,7 @@ function PaymentDialog({
               ))}
             </select>
           </FormField>
-          <FormField label="Purchase order" required error={errors.purchaseOrderId}>
+          <FormField label="Purchase Order" required error={errors.purchaseOrderId}>
             <select
               className="field"
               value={purchaseOrderId}
@@ -923,7 +925,7 @@ function PaymentDialog({
             </select>
           </FormField>
           <FormField
-            label="Supplier invoice"
+            label="Supplier Invoice"
             hint="Link the invoice this payment settles, if any."
             error={errors.invoiceId}
           >
@@ -959,7 +961,7 @@ function PaymentDialog({
             </p>
           </div>
           <FormField
-            label="Payment amount (₱)"
+            label="Payment Amount (₱)"
             required
             hint={purchaseOrderId ? `Up to ${currency.format(maximum)}` : undefined}
             error={errors.amount}
@@ -977,7 +979,7 @@ function PaymentDialog({
               }}
             />
           </FormField>
-          <FormField label="Payment date" required error={errors.paidAt}>
+          <FormField label="Payment Date" required error={errors.paidAt}>
             <input
               type="date"
               max={today()}
@@ -989,31 +991,29 @@ function PaymentDialog({
               }}
             />
           </FormField>
-          <FormField label="Payment method" required error={errors.method}>
+          <FormField label="Payment Method" required error={errors.method}>
             <select
               className="field"
               value={method}
               onChange={(event) => setMethod(event.target.value)}
             >
-              <option>Bank transfer</option>
-              <option>Cash</option>
-              <option>Check</option>
-              <option>E-wallet</option>
-              <option>Other</option>
+              {paymentMethods.map((value) => (
+                <option key={value}>{value}</option>
+              ))}
             </select>
           </FormField>
           <FormField
-            label="Reference number"
+            label="Reference Number"
             hint="Check, transfer or receipt number. Each reference can be used once."
             error={errors.referenceNumber}
           >
-            <input
-              className="field"
+            <FilteredInput
+              rule="reference"
               maxLength={120}
               placeholder="e.g. BT-0098123"
               value={referenceNumber}
-              onChange={(event) => {
-                setReferenceNumber(event.target.value)
+              onValueChange={(value) => {
+                setReferenceNumber(value)
                 clear('referenceNumber')
               }}
             />
@@ -1028,7 +1028,7 @@ function PaymentDialog({
           />
         </FormField>
         <FormError message={error} />
-        <Actions close={close} saving={saving} label="Record payment" disabled={!purchaseOrderId} />
+        <Actions close={close} saving={saving} label="Record Payment" disabled={!purchaseOrderId} />
       </form>
     </Modal>
   )

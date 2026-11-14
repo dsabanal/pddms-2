@@ -26,15 +26,28 @@ import { fileURLToPath } from 'node:url'
 const handoff = (orderId) => ({
   orderId,
   driverName: 'Demo Driver',
-  receivedByName: 'Demo Clinic Pharmacist'
+  receivedByName: 'Demo Receiving Pharmacist'
 })
 
 export const demoAccounts = [
-  { role: 'master', fullName: 'Demo Admin', username: 'demo.admin', password: 'DemoAdmin#2026' },
-  { role: 'staff', fullName: 'Demo Staff', username: 'demo.staff', password: 'DemoStaff#2026' },
+  {
+    role: 'master',
+    fullName: 'Demo Admin',
+    email: 'demo.admin@example.com',
+    username: 'demo.admin',
+    password: 'DemoAdmin#2026'
+  },
+  {
+    role: 'staff',
+    fullName: 'Demo Staff',
+    email: 'demo.staff@example.com',
+    username: 'demo.staff',
+    password: 'DemoStaff#2026'
+  },
   {
     role: 'cashier',
     fullName: 'Demo Cashier',
+    email: 'demo.cashier@example.com',
     username: 'demo.cashier',
     password: 'DemoCashier#2026'
   }
@@ -183,6 +196,7 @@ async function seed() {
     // Accounts: the Master Account goes through first-launch setup, the others through user management.
     await call(channels.setup.createMaster, {
       fullName: admin.fullName,
+      email: admin.email,
       username: admin.username,
       password: admin.password
     })
@@ -192,6 +206,7 @@ async function seed() {
       {
         role: 'staff',
         fullName: 'Demo Blocked User',
+        email: 'demo.blocked@example.com',
         username: 'demo.blocked',
         password: randomUUID()
       }
@@ -382,14 +397,17 @@ async function seed() {
 
     // Customers (fictional contact details).
     const customers = {}
-    for (const [key, fullName, phone, discountType, discountId] of [
-      ['walkIn', 'Liza Mendoza', '09170000201', 'none', null],
-      ['senior', 'Ramon Villanueva', '09170000202', 'senior', 'SC-DEMO-0001'],
-      ['pwd', 'Carla Bautista', '09170000203', 'pwd', 'PWD-DEMO-0001'],
-      ['clinic', 'Sunrise Community Clinic', '09170000204', 'none', null]
+    // Retail customers buy at the counter; the pharmacy client is the wholesale buyer.
+    for (const [key, fullName, phone, discountType, discountId, clientType] of [
+      ['walkIn', 'Liza Mendoza', '09170000201', 'none', null, 'retail'],
+      ['senior', 'Ramon Villanueva', '09170000202', 'senior', 'SCDEMO0001', 'retail'],
+      ['pwd', 'Carla Bautista', '09170000203', 'pwd', 'PWDDEMO0001', 'retail'],
+      ['clinic', 'Sunrise Community Pharmacy', '09170000204', 'none', null, 'pharmacy']
     ])
       customers[key] = (
         await call(channels.customer.createOne, {
+          clientType,
+          contactPerson: clientType === 'pharmacy' ? 'Grace Lim' : null,
           fullName,
           phone,
           email: `${key.toLowerCase()}@example.com`,
@@ -411,29 +429,26 @@ async function seed() {
       unitPriceCents: Math.round(batches[tag].sellPrice * 100)
     })
 
-    // Wholesale: one delivered order with a partial payment, one pending order (staff).
-    const wholesale = async (items, dueDate, notes) =>
+    // Wholesale: one delivered order with a partial payment, one scheduled order (staff).
+    const wholesale = async (items, dueDate, scheduledDate, notes) =>
       call(channels.wholesale.create, {
         requestId: randomUUID(),
         customerId: customers.clinic.id,
         dueDate,
-        deliveryAddress: 'Sunrise Community Clinic, Demo Avenue, General Santos City',
+        scheduledDate,
+        deliveryAddress: 'Sunrise Community Pharmacy, Demo Avenue, General Santos City',
+        deliveryNotes: 'Receive at the pharmacy counter',
         notes,
         items
       })
     const { data: deliveredOrderId } = await wholesale(
       [line('FVX-2401', 60), line('AMX-2409', 20)],
       day(20),
-      'Clinic monthly supply'
+      day(0),
+      'Pharmacy monthly supply'
     )
-    await call(channels.wholesale.schedule, {
-      orderId: deliveredOrderId,
-      scheduledDate: day(0),
-      deliveryAddress: 'Sunrise Community Clinic, Demo Avenue, General Santos City',
-      deliveryNotes: 'Receive at the clinic pharmacy counter'
-    })
     await call(channels.wholesale.deliver, handoff(deliveredOrderId))
-    await wholesale([line('LSD-2408', 30)], day(30), 'Awaiting delivery schedule')
+    await wholesale([line('LSD-2408', 30)], day(30), day(3), 'Scheduled for delivery')
 
     // Retail sales by the cashier, including Senior Citizen and PWD discounts.
     await call(channels.auth.signOut)

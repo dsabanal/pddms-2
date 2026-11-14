@@ -122,8 +122,8 @@ export type ProcurementTab = 'suppliers' | 'orders' | 'receiving' | 'invoices' |
 
 export const procurementTabs: Array<{ id: ProcurementTab; label: string }> = [
   { id: 'suppliers', label: 'Suppliers' },
-  { id: 'orders', label: 'Purchase orders' },
+  { id: 'orders', label: 'Purchase Orders' },
   { id: 'receiving', label: 'Receiving' },
-  { id: 'invoices', label: 'Invoices & payments' },
+  { id: 'invoices', label: 'Invoices & Payments' },
   { id: 'history', label: 'History' }
 ]

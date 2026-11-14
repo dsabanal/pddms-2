@@ -61,7 +61,7 @@ export default function StockOutPanel({ item }: { item: ItemProfile }): ReactEle
 
   return (
     <section className="panel min-w-0 space-y-4 p-5">
-      <h3 className="font-semibold">Stock-out adjustments</h3>
+      <h3 className="section-title text-lg">Stock-Out Adjustments</h3>
       <p className="text-sm text-slate-500">
         Record damaged, expired, returned, or missing units removed from a batch.
       </p>
@@ -87,7 +87,7 @@ export default function StockOutPanel({ item }: { item: ItemProfile }): ReactEle
               ))}
           </select>
         </FormField>
-        <FormField label="Units to remove" required error={fieldErrors.quantity}>
+        <FormField label="Units to Remove" required error={fieldErrors.quantity}>
           <input
             className="field"
             required
@@ -110,7 +110,7 @@ export default function StockOutPanel({ item }: { item: ItemProfile }): ReactEle
           />
         </FormField>
         <button className="primary-button w-fit" disabled={saving || !batchId}>
-          {saving ? 'Saving…' : 'Record stock-out'}
+          {saving ? 'Saving…' : 'Record Stock-Out'}
         </button>
       </form>
       {error && (

@@ -62,6 +62,8 @@ export interface AccountsTable {
   role: Role
   username: string
   fullName: string
+  /** Contact email; accounts created before emails were collected have none. */
+  email: ColumnType<string | null, string | null | undefined, string | null>
   password: string
   isArchived: ColumnType<ZeroOrOne, never, ZeroOrOne>
   isVerified: ColumnType<ZeroOrOne, ZeroOrOne | undefined, ZeroOrOne>
@@ -98,7 +100,16 @@ export interface DrugsTable {
 
 export interface CustomersTable {
   id: ColumnType<Id, Id | undefined, never>
+  /** `retail` buys at the counter; `pharmacy` is another pharmacy that orders wholesale. */
+  clientType: ColumnType<
+    'retail' | 'pharmacy',
+    'retail' | 'pharmacy' | undefined,
+    'retail' | 'pharmacy'
+  >
+  /** Pharmacy name for pharmacy clients, the customer's own name otherwise. */
   fullName: string
+  /** Person to talk to at a pharmacy client. */
+  contactPerson: ColumnType<string | null, string | null | undefined, string | null>
   phone: string
   email: string | null
   address: string | null

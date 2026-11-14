@@ -12,7 +12,7 @@ export const cartLineSchema = z.strictObject({
   unitPriceCents: centsSchema
 })
 // Note: Same ID rules as a saved customer profile, so the walk-in path is not a weaker route.
-const discountIdPattern = /^[A-Za-z0-9][A-Za-z0-9 ./-]*$/
+const discountIdPattern = /^[A-Za-z0-9]+$/
 const holderNamePattern = /^\p{L}[\p{L} .,'-]*$/u
 export const walkInDiscountSchema = z
   .strictObject({
@@ -26,9 +26,14 @@ export const walkInDiscountSchema = z
     discountId: z
       .string()
       .trim()
-      .min(4, 'Enter the ID number (at least 4 characters).')
-      .max(40, 'ID number is too long.')
-      .regex(discountIdPattern, 'Use letters, numbers, spaces, periods, slashes or hyphens.'),
+      .transform((value) => value.replace(/[\s./-]/g, ''))
+      .pipe(
+        z
+          .string()
+          .min(4, 'Enter the ID number (at least 4 characters).')
+          .max(40, 'ID number is too long.')
+          .regex(discountIdPattern, 'ID number may use only letters and numbers.')
+      ),
     discountExpiresAt: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid ID expiry date.')
