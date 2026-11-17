@@ -195,6 +195,11 @@
     @apply border-slate-400;
   }
 
+  /* Inputs inside dense dialog tables (e.g. Receive Products) keep more of their placeholder visible. */
+  .app-dialog td .field {
+    @apply px-2;
+  }
+
   .field[aria-invalid='true'] {
     @apply border-rose-400 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-100;
   }

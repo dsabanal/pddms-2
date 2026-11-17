@@ -24,6 +24,8 @@ const initialFilter = (): ReportFilter => ({
   search: '',
   page: 1
 })
+const longReference = /^[A-Z]{2,6}-[0-9A-F]{8}-[0-9A-F-]{20,}$/i
+
 export function ReportTable({ report }: { report: BusinessReport }): ReactElement {
   const cell = (row: ReportRow, column: ReportColumn): ReactElement | string | number => {
     const value = row[column.key]
@@ -40,6 +42,9 @@ export function ReportTable({ report }: { report: BusinessReport }): ReactElemen
       )
     if (column.format === 'money') return money(Number(value))
     if (column.format === 'dateTime') return new Date(String(value)).toLocaleString()
+    // Note: Long system references (e.g. SALE-<id>) read better small and monospaced.
+    if (typeof value === 'string' && longReference.test(value))
+      return <span className="font-mono text-xs break-all text-slate-700">{value}</span>
     return value
   }
   return (
@@ -48,7 +53,10 @@ export function ReportTable({ report }: { report: BusinessReport }): ReactElemen
         <thead className="sticky top-0 z-10 bg-slate-50">
           <tr>
             {report.columns.map((column) => (
-              <th className="px-4 py-3 whitespace-nowrap" key={column.key}>
+              <th
+                className={`px-4 py-3 whitespace-nowrap ${column.format === 'money' ? 'text-right' : ''}`}
+                key={column.key}
+              >
                 {column.label}
               </th>
             ))}
@@ -58,7 +66,10 @@ export function ReportTable({ report }: { report: BusinessReport }): ReactElemen
           {report.rows.map((row, index) => (
             <tr key={index} className="border-t border-slate-100">
               {report.columns.map((column) => (
-                <td className="max-w-96 min-w-32 px-4 py-3 align-top break-words" key={column.key}>
+                <td
+                  className={`max-w-96 min-w-32 px-4 py-3 align-top break-words ${column.format === 'money' ? 'text-right whitespace-nowrap' : ''}`}
+                  key={column.key}
+                >
                   {cell(row, column)}
                 </td>
               ))}

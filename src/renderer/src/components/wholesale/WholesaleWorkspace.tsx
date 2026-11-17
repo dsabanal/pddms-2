@@ -1218,7 +1218,7 @@ function OrderDetails({
                       <td className="max-w-72 px-3 py-2.5 font-medium break-words">
                         {item.productName}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 whitespace-nowrap">
                         {item.batchNumber}
                         <p className="text-xs text-slate-600">Exp {showDate(item.expiresAt)}</p>
                       </td>

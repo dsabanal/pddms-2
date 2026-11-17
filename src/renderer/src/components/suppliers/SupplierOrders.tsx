@@ -724,9 +724,9 @@ function OrderTable({
     <div className="min-w-0 overflow-x-auto">
       <table className="w-full min-w-[860px] table-fixed text-sm">
         <colgroup>
-          <col className="w-[21%]" />
+          <col className="w-[19%]" />
+          <col className="w-[15%]" />
           <col className="w-[17%]" />
-          <col className="w-[13%]" />
           <col className="w-[33%]" />
           <col className="w-[16%]" />
         </colgroup>
@@ -787,7 +787,7 @@ function OrderTable({
                   </p>
                 </td>
                 <td className="px-4 py-4">
-                  <span className="inline-flex items-center gap-1">
+                  <span className="flex flex-wrap items-center gap-1">
                     <StatusBadge status={order.status} />
                     <InfoTip label={orderStatusLabels[order.status]}>
                       {orderStatusHelp[order.status]}

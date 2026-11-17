@@ -462,8 +462,10 @@ export default function SalesWorkspace(): ReactElement {
                       key={sale.id}
                     >
                       <td className="max-w-64 p-3 break-all">
-                        {sale.reference}
-                        <p>{new Date(sale.createdAt).toLocaleString()}</p>
+                        <span className="font-mono text-xs text-slate-700">{sale.reference}</span>
+                        <p className="mt-0.5 break-normal">
+                          {new Date(sale.createdAt).toLocaleString()}
+                        </p>
                         {sale.status === 'voided' && (
                           <p className="mt-1 text-xs font-semibold break-words text-rose-700">
                             <span className="rounded border border-rose-300 px-1.5 py-0.5">
