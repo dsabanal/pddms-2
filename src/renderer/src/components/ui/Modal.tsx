@@ -83,7 +83,7 @@ export default function Modal({
         className={`app-dialog relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${width} min-w-0 flex-col overflow-hidden rounded-lg bg-white shadow-2xl outline-none`}
       >
         <div className="min-h-0 overflow-x-hidden overflow-y-auto p-5 sm:p-6">
-          <div className="mb-5 flex items-start justify-between gap-3">
+          <div className="mb-5 flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h2 className="text-xl font-semibold tracking-tight break-words text-slate-950">
@@ -91,7 +91,7 @@ export default function Modal({
                 </h2>
                 {info && <InfoTip label={title}>{info}</InfoTip>}
               </div>
-              {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+              {description && <p className="mt-1 text-sm text-slate-600">{description}</p>}
             </div>
             <button
               type="button"

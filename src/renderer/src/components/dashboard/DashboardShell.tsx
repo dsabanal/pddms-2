@@ -180,11 +180,14 @@ function Sidebar({
                     onClick={onClose}
                     className={`group flex items-center gap-3 border-l-4 px-4 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'border-brand-300 bg-brand-600 text-white'
+                        ? 'border-brand-400 bg-brand-500/20 font-semibold text-white'
                         : 'border-transparent text-slate-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <Icon className="size-4.5 shrink-0" aria-hidden="true" />
+                    <Icon
+                      className={`size-4.5 shrink-0 ${isActive ? 'text-brand-300' : ''}`}
+                      aria-hidden="true"
+                    />
                     <span>{label}</span>
                   </Link>
                 )

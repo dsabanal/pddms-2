@@ -442,7 +442,7 @@ export default function SupplierOrders({
                     role="tab"
                     aria-selected={tab === item.id}
                     onClick={() => setTab(item.id)}
-                    className={`flex-1 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-sidebar-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                    className={`flex-1 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
                   >
                     {item.label}
                   </button>

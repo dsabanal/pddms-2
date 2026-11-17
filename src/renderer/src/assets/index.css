@@ -54,6 +54,17 @@
   table {
     @apply tabular-nums;
   }
+
+  /* Balanced headings and fewer one-word last lines in short paragraphs. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
 }
 
 @layer components {
@@ -62,7 +73,7 @@
   .glass-surface,
   .table-surface,
   .metric-card {
-    @apply relative rounded-lg border border-slate-200 bg-white shadow-sm;
+    @apply relative rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgb(15_23_42/0.05)];
   }
 
   .table-surface {
@@ -128,7 +139,9 @@
    * 14-16px with 1.5 line height. Titles, labels and buttons use title case.
    */
   .page-title {
-    @apply text-[2rem] leading-tight font-bold tracking-tight text-slate-950;
+    @apply leading-tight font-bold tracking-tight text-slate-950;
+    /* Note: Fluid size (26px in narrow windows up to 32px on wide screens) keeps long titles on one line. */
+    font-size: clamp(1.625rem, 1.05rem + 1.1vw, 2rem);
   }
 
   .page-subtitle {
@@ -175,7 +188,11 @@
 
   /* Forms */
   .field {
-    @apply focus:border-brand-500 focus:ring-brand-100 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-400 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+    @apply focus:border-brand-500 focus:ring-brand-100 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-500 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+  }
+
+  .field:hover:not(:disabled, :focus, [aria-invalid='true']) {
+    @apply border-slate-400;
   }
 
   .field[aria-invalid='true'] {
@@ -184,11 +201,11 @@
 
   /* Buttons */
   .primary-button {
-    @apply bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-300 inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply bg-brand-600 hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-300 inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
   }
 
   .secondary-button {
-    @apply focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2;
+    @apply focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 active:bg-slate-100;
   }
 
   .danger-button {
@@ -210,7 +227,13 @@
   .table-surface thead,
   .panel thead,
   .data-table thead {
-    @apply bg-slate-50 text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply bg-slate-50 text-xs font-semibold tracking-wide text-slate-600 uppercase;
+  }
+
+  .table-surface thead th,
+  .panel thead th,
+  .data-table thead th {
+    @apply border-b border-slate-200;
   }
 
   .table-surface tbody tr,
@@ -221,6 +244,12 @@
 
   .status-badge {
     @apply inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-current/15 ring-inset;
+  }
+
+  /* A small dot before the word, so status never relies on colour alone. */
+  .status-badge:not(:has(svg))::before {
+    @apply size-1.5 shrink-0 rounded-full bg-current opacity-80;
+    content: '';
   }
 
   /* Sign-in and first-launch setup */
