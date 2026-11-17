@@ -60,7 +60,7 @@ export default function CustomerDirectory(): ReactElement {
     <DashboardShell pageTitle="Customers">
       <div className="space-y-5 sm:space-y-6">
         <section className="page-intro">
-          <div className="page-intro-content flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="page-intro-content page-header">
             <div className="max-w-2xl">
               <p className="eyebrow">Daily work</p>
               <div className="mt-0.5 flex items-center gap-1.5">

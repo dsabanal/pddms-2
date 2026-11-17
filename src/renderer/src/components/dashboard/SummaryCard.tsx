@@ -180,13 +180,13 @@ export default function SummaryCard({ metric }: { metric: DashboardSummaryMetric
             </div>
           )}
         </div>
-        <div className="relative mt-5">
-          <p className="text-sm font-medium text-slate-500">{metric.label}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight break-words text-slate-900 tabular-nums">
+        <div className="relative mt-4">
+          <p className="text-sm font-medium text-slate-600">{metric.label}</p>
+          <p className="mt-1 text-[1.75rem] leading-tight font-bold tracking-tight break-words text-slate-950 tabular-nums">
             {formatMetric(metric)}
           </p>
         </div>
-        <div className="relative mt-4 flex min-w-0 flex-wrap items-center gap-2 text-xs">
+        <div className="relative mt-3 flex min-w-0 flex-wrap items-center gap-2 text-xs">
           {metric.sparkline.length > 1 && (
             <span
               className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-semibold ${trendClassName}`}
@@ -195,14 +195,14 @@ export default function SummaryCard({ metric }: { metric: DashboardSummaryMetric
               {metric.trend.direction === 'flat' ? 'Stable' : `${metric.trend.percentage}%`}
             </span>
           )}
-          <span className="text-slate-500">{metric.trend.label}</span>
+          <span className="text-slate-600">{metric.trend.label}</span>
         </div>
       </div>
       {canOpen && (
         <Link
           to={destination.to}
           search={destination.to === '/suppliers' ? { tab: destination.tab } : undefined}
-          className="hover:bg-brand-50 hover:text-brand-800 flex items-center justify-center gap-1.5 border-t border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-700 transition-colors"
+          className="hover:bg-brand-50 hover:text-brand-800 text-brand-800 flex items-center justify-center gap-1.5 border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold transition-colors"
         >
           {destination.label} <FiChevronsRight aria-hidden="true" />
         </Link>

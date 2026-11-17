@@ -302,11 +302,11 @@ export default function ProcurementRecords({
         <table className="w-full min-w-[850px] table-fixed text-sm">
           <colgroup>
             <col className="w-[18%]" />
+            <col className="w-[21%]" />
+            <col className="w-[16%]" />
             <col className="w-[22%]" />
-            <col className="w-[18%]" />
-            <col className="w-[25%]" />
-            <col className="hidden w-[17%] xl:table-column" />
-            <col className="w-24" />
+            <col className="hidden w-[15%] xl:table-column" />
+            <col className="w-48" />
           </colgroup>
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>

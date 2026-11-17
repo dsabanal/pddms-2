@@ -85,7 +85,7 @@ export default function ItemDirectory(): ReactElement {
     <DashboardShell pageTitle="Inventory & Expiry">
       <div className="space-y-5 sm:space-y-6">
         <section className="page-intro">
-          <div className="page-intro-content flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+          <div className="page-intro-content page-header">
             <div className="max-w-2xl min-w-0">
               <p className="eyebrow">Stock & purchasing</p>
               <div className="flex items-center gap-1.5">
@@ -322,7 +322,7 @@ export default function ItemDirectory(): ReactElement {
             </div>
           </section>
 
-          <aside className="grid gap-5 sm:grid-cols-3 xl:grid-cols-1">
+          <aside className="grid content-start gap-5 sm:grid-cols-3 xl:grid-cols-1">
             <InventoryMetric
               icon={<FiAlertTriangle />}
               label="Needs Attention"

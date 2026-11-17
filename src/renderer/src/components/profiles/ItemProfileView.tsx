@@ -231,9 +231,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                   {stockLabel(item)}
                 </span>
               </div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
-                {item.brandName}
-              </h1>
+              <h1 className="page-title mt-3 text-2xl">{item.brandName}</h1>
               <p className="mt-3 text-sm text-slate-600 sm:text-base">
                 {item.genericName} · {item.formulation}
               </p>
@@ -350,7 +348,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
             value={item.batches[0] ? currency.format(item.batches[0].sellPrice) : 'Unavailable'}
           />
         </section>
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
+        <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
           <div className="panel min-w-0 overflow-hidden">
             <Header
               title="Stock Batches"

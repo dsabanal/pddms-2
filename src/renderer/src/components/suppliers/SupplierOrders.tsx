@@ -442,7 +442,7 @@ export default function SupplierOrders({
                     role="tab"
                     aria-selected={tab === item.id}
                     onClick={() => setTab(item.id)}
-                    className={`flex-1 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-sidebar-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                    className={`flex-1 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
                   >
                     {item.label}
                   </button>
@@ -724,9 +724,9 @@ function OrderTable({
     <div className="min-w-0 overflow-x-auto">
       <table className="w-full min-w-[860px] table-fixed text-sm">
         <colgroup>
-          <col className="w-[21%]" />
+          <col className="w-[19%]" />
+          <col className="w-[15%]" />
           <col className="w-[17%]" />
-          <col className="w-[13%]" />
           <col className="w-[33%]" />
           <col className="w-[16%]" />
         </colgroup>
@@ -787,7 +787,7 @@ function OrderTable({
                   </p>
                 </td>
                 <td className="px-4 py-4">
-                  <span className="inline-flex items-center gap-1">
+                  <span className="flex flex-wrap items-center gap-1">
                     <StatusBadge status={order.status} />
                     <InfoTip label={orderStatusLabels[order.status]}>
                       {orderStatusHelp[order.status]}
