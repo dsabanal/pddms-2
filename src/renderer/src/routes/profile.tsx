@@ -53,12 +53,14 @@ function Profile(): ReactElement {
             .finally(() => setBusy(false))
         }}
       >
-        <h1 className="page-title">My Profile</h1>
-        <p className="text-sm text-slate-600">
-          Role: {account ? roleLabels[account.role] : ''}. Your access level is set by the master
-          account. Saving asks for your current password and signs you out so you can sign in with
-          the new details.
-        </p>
+        <div className="hero-band -mx-5 -mt-5 rounded-t-xl rounded-b-none">
+          <h1 className="page-title">My Profile</h1>
+          <p className="text-brand-100 mt-2 text-sm leading-6">
+            Role: {account ? roleLabels[account.role] : ''}. Your access level is set by the master
+            account. Saving asks for your current password and signs you out so you can sign in with
+            the new details.
+          </p>
+        </div>
         {error && (
           <p role="alert" className="status-message border-rose-200 bg-rose-50 text-rose-800">
             {error}

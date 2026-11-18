@@ -113,7 +113,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
             <FiArrowLeft /> Back to Inventory
           </Link>
           <form noValidate onSubmit={save} className="panel mx-auto max-w-3xl space-y-6 p-6 sm:p-7">
-            <div>
+            <div className="hero-band -mx-6 -mt-6 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
               <p className="eyebrow">Inventory</p>
               <div className="flex items-center gap-1.5">
                 <h1 className="page-title mt-0.5">Add New Product</h1>
@@ -122,8 +122,8 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                   when you receive products against a purchase order.
                 </InfoTip>
               </div>
-              <p className="mt-3 text-xs text-slate-500">
-                Fields marked <span className="text-rose-600">*</span> are required.
+              <p className="text-brand-100 mt-3 text-xs">
+                Fields marked <span className="text-rose-300">*</span> are required.
               </p>
             </div>
             <ProductFields
@@ -220,8 +220,8 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
         >
           <FiArrowLeft /> Back to Inventory
         </Link>
-        <section className="panel relative overflow-hidden p-6 sm:p-7">
-          <div className="relative flex flex-col justify-between gap-5 md:flex-row">
+        <section className="hero-band">
+          <div className="flex flex-col justify-between gap-5 md:flex-row">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="eyebrow">{item.category}</p>
@@ -232,7 +232,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                 </span>
               </div>
               <h1 className="page-title mt-3 text-2xl">{item.brandName}</h1>
-              <p className="mt-3 text-sm text-slate-600 sm:text-base">
+              <p className="text-brand-100 mt-3 text-sm sm:text-base">
                 {item.genericName} · {item.formulation}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -280,13 +280,13 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
             onSubmit={(event) => void saveEdit(event)}
             className="panel mx-auto max-w-3xl space-y-6 p-6 sm:p-7"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="hero-band -mx-6 -mt-6 flex items-start justify-between gap-4 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
               <div>
                 <p className="eyebrow">Item details</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
                   Edit Product
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
+                <p className="text-brand-100 mt-3 text-sm leading-6">
                   Update catalog information without changing stock batch history.
                 </p>
               </div>
@@ -646,12 +646,10 @@ function Metric({
   hint?: string
 }): ReactElement {
   return (
-    <div className="panel relative overflow-hidden p-5 sm:p-6">
-      <div className="relative">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-      </div>
+    <div className="stat-tile">
+      <p className="stat-tile-label font-semibold">{label}</p>
+      <p className="stat-tile-value">{value}</p>
+      {hint && <p className="mt-1 text-xs text-slate-600">{hint}</p>}
     </div>
   )
 }
