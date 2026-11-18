@@ -59,7 +59,7 @@ export default function CustomerDirectory(): ReactElement {
   return (
     <DashboardShell pageTitle="Customers">
       <div className="space-y-5 sm:space-y-6">
-        <section className="page-intro">
+        <section className="page-intro hero-band">
           <div className="page-intro-content page-header">
             <div className="max-w-2xl">
               <p className="eyebrow">Daily work</p>
@@ -95,7 +95,8 @@ export default function CustomerDirectory(): ReactElement {
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* Note: 2026-11 redesign: figures as a strip above a full-width directory (order-first). */}
+        <div className="grid gap-5">
           <section className="panel min-w-0 overflow-hidden">
             <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
@@ -177,7 +178,7 @@ export default function CustomerDirectory(): ReactElement {
             </div>
           </section>
 
-          <aside className="grid gap-5 sm:grid-cols-3 xl:grid-cols-1">
+          <aside className="order-first grid gap-5 sm:grid-cols-3">
             <DirectoryMetric
               icon={<FiUsers />}
               label="Retail Customers"
@@ -215,14 +216,14 @@ function DirectoryMetric({
   description: string
 }): ReactElement {
   return (
-    <section className="glass-surface relative overflow-hidden rounded-lg p-5">
-      <div className="relative">
-        <div className="text-brand-700 grid size-10 place-items-center rounded-lg border border-slate-200 bg-white shadow-sm">
-          {icon}
-        </div>
-        <p className="mt-5 text-sm font-semibold text-slate-600">{label}</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
+    <section className="stat-tile flex-row items-start gap-4">
+      <div className="bg-brand-50 text-brand-700 grid size-12 shrink-0 place-items-center rounded-xl text-lg">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="stat-tile-label font-semibold">{label}</p>
+        <p className="stat-tile-value mt-0.5 text-3xl">{value}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
       </div>
     </section>
   )

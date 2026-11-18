@@ -48,7 +48,7 @@ export default function UserManagement(): ReactElement {
   return (
     <DashboardShell pageTitle="User Management">
       <div className="space-y-5 lg:space-y-6">
-        <section className="page-intro">
+        <section className="page-intro hero-band">
           <div className="page-intro-content flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="eyebrow">Account & admin</p>
@@ -74,7 +74,7 @@ export default function UserManagement(): ReactElement {
             </div>
           </div>
         </section>
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-5 sm:grid-cols-3">
           <Metric label="Total Accounts" value={management.users.length} icon={<FiUsers />} />
           <Metric
             label="Active Accounts"
@@ -754,14 +754,14 @@ function Metric({
   icon: ReactElement
 }): ReactElement {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{label}</p>
-        <span className="bg-brand-50 text-brand-700 grid size-10 place-items-center rounded-lg">
-          {icon}
-        </span>
+    <div className="stat-tile flex-row items-center gap-4">
+      <span className="bg-brand-50 text-brand-700 grid size-12 shrink-0 place-items-center rounded-xl text-lg">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="stat-tile-label font-semibold">{label}</p>
+        <p className="stat-tile-value mt-0.5 text-3xl">{value}</p>
       </div>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
     </div>
   )
 }

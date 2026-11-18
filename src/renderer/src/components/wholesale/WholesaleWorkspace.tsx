@@ -221,7 +221,7 @@ export default function WholesaleWorkspace(): ReactElement {
   return (
     <DashboardShell pageTitle="Wholesale & Deliveries">
       <div className="space-y-5">
-        <header className="page-intro flex flex-wrap items-end justify-between gap-3">
+        <header className="page-intro hero-band flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="eyebrow">Business</p>
             <div className="flex items-center gap-1.5">

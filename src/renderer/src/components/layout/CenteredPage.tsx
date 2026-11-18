@@ -7,7 +7,7 @@ export function CenteredPage({ children }: PropsWithChildren): ReactElement {
         <div className="relative">
           <div className="mb-8 flex flex-col items-center gap-3 text-center">
             <div
-              className="bg-brand-600 grid size-14 place-items-center rounded-xl text-3xl font-bold text-white shadow-sm"
+              className="bg-sidebar-900 grid size-14 place-items-center rounded-2xl text-3xl font-bold text-white shadow-md"
               aria-hidden="true"
             >
               +
