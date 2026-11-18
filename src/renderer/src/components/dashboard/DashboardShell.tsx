@@ -129,12 +129,12 @@ function Sidebar({
     <div className="glass-sidebar flex h-full flex-col text-slate-300">
       <div className="bg-sidebar-950 flex h-16 shrink-0 items-center justify-between gap-3 px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="bg-brand-600 grid size-10 shrink-0 place-items-center rounded-md text-2xl font-semibold text-white">
+          <div className="bg-brand-500 grid size-10 shrink-0 place-items-center rounded-xl text-2xl font-semibold text-white shadow-sm">
             +
           </div>
           <div className="min-w-0">
             <p className="truncate font-semibold tracking-tight text-white">Med Prix</p>
-            <p className="truncate text-xs text-slate-300">Distributor and Pharmacy</p>
+            <p className="text-brand-100 truncate text-xs">Distributor and Pharmacy</p>
           </div>
         </div>
         {onClose && (
@@ -157,7 +157,7 @@ function Sidebar({
           if (permitted.length === 0) return null
           return (
             <div key={group} className="pb-5">
-              <p className="px-5 pb-1.5 text-xs font-semibold tracking-wider text-slate-300 uppercase">
+              <p className="text-brand-200 px-6 pb-1.5 text-xs font-semibold tracking-wider uppercase">
                 {group}
               </p>
               {permitted.map(({ label, to, icon: Icon, tab }) => {
@@ -178,14 +178,14 @@ function Sidebar({
                     search={to === '/suppliers' ? { tab } : undefined}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={onClose}
-                    className={`group flex items-center gap-3 border-l-4 px-4 py-2.5 text-sm font-medium transition-colors ${
+                    className={`group mx-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'border-brand-400 bg-brand-500/20 font-semibold text-white'
-                        : 'border-transparent text-slate-300 hover:bg-white/10 hover:text-white'
+                        ? 'text-brand-900 bg-white font-semibold shadow-sm'
+                        : 'text-brand-50 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <Icon
-                      className={`size-4.5 shrink-0 ${isActive ? 'text-brand-300' : ''}`}
+                      className={`size-4.5 shrink-0 ${isActive ? 'text-brand-600' : 'text-brand-200'}`}
                       aria-hidden="true"
                     />
                     <span>{label}</span>

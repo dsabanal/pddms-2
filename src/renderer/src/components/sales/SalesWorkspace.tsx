@@ -385,7 +385,7 @@ export default function SalesWorkspace(): ReactElement {
   return (
     <DashboardShell pageTitle="Sales & Dispensing">
       <div className="space-y-5">
-        <header className="page-intro flex flex-wrap items-end justify-between gap-4">
+        <header className="page-intro hero-band flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow">Daily work</p>
             <div className="flex items-center gap-1.5">
@@ -690,7 +690,9 @@ export default function SalesWorkspace(): ReactElement {
                 </p>
               )}
             </section>
-            <section className="panel min-w-0 space-y-4 p-5 sm:p-6">
+            {/* Note: 2026-11 redesign: on wide screens the cart stays in view while the product
+                list scrolls, like a point-of-sale screen. */}
+            <section className="panel min-w-0 space-y-4 p-5 sm:p-6 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:self-start xl:overflow-y-auto">
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="section-title">2. Current Cart</h3>
@@ -1109,7 +1111,7 @@ export default function SalesWorkspace(): ReactElement {
                   {pricing.error}
                 </p>
               )}
-              <dl className="space-y-2 rounded-md bg-slate-50 p-4">
+              <dl className="bg-sidebar-900 text-brand-50 space-y-2 rounded-xl p-5">
                 <div className="flex justify-between gap-3">
                   <dt>Subtotal</dt>
                   <dd>{money(pricing.totals.subtotalCents)}</dd>
@@ -1122,7 +1124,7 @@ export default function SalesWorkspace(): ReactElement {
                   <dt>Discount</dt>
                   <dd>−{money(pricing.totals.discountCents)}</dd>
                 </div>
-                <div className="flex justify-between gap-3 border-t border-slate-300 pt-3 text-xl font-bold">
+                <div className="flex items-baseline justify-between gap-3 border-t border-white/20 pt-3 text-2xl font-extrabold tracking-tight text-white">
                   <dt>Total Due</dt>
                   <dd>{money(pricing.totals.totalCents)}</dd>
                 </div>

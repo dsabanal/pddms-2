@@ -148,22 +148,28 @@ function WorkflowSteps({
                 type="button"
                 onClick={() => setTab(step.tab)}
                 aria-current={active ? 'step' : undefined}
-                className={`flex h-full w-full items-center gap-3 px-4 py-3 text-left transition-colors ${active ? 'bg-brand-50' : 'hover:bg-slate-50'}`}
+                className={`flex h-full w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${active ? 'bg-brand-700 text-white' : 'hover:bg-slate-50'}`}
               >
                 <span
-                  className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                  className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${active ? 'text-brand-800 bg-white' : 'bg-brand-50 text-brand-700'}`}
                 >
                   {index + 1}
                 </span>
                 <span className="min-w-0">
                   <span
-                    className={`block text-sm font-semibold ${active ? 'text-brand-800' : 'text-slate-800'}`}
+                    className={`block text-sm font-semibold ${active ? 'text-white' : 'text-slate-800'}`}
                   >
                     {step.label}
                   </span>
-                  <span className="block text-xs text-slate-500">
+                  <span className={`block text-xs ${active ? 'text-brand-100' : 'text-slate-600'}`}>
                     {step.hint}
-                    {count && <span className="ml-1 font-semibold text-amber-700">· {count}</span>}
+                    {count && (
+                      <span
+                        className={`ml-1 font-semibold ${active ? 'text-amber-200' : 'text-amber-700'}`}
+                      >
+                        · {count}
+                      </span>
+                    )}
                   </span>
                 </span>
               </button>
@@ -343,6 +349,7 @@ export default function SupplierOrders({
     <DashboardShell pageTitle="Suppliers & Purchasing">
       <div className="space-y-5 lg:space-y-6">
         <PageHeader
+          hero
           // Note: The page keeps one name in the sidebar, top bar and heading (U3); the open tab is
           // shown in the section trail above the heading and in the tab strip.
           section={`Stock & Purchasing › ${procurementTabs.find((item) => item.id === tab)?.label ?? 'Purchase Orders'}`}
@@ -442,7 +449,7 @@ export default function SupplierOrders({
                     role="tab"
                     aria-selected={tab === item.id}
                     onClick={() => setTab(item.id)}
-                    className={`flex-1 shrink-0 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                    className={`flex-1 shrink-0 rounded-lg px-4 py-2 text-sm font-semibold whitespace-nowrap transition sm:flex-none ${tab === item.id ? 'bg-brand-700 text-white shadow-sm' : 'hover:text-brand-800 hover:bg-brand-50 text-slate-600'}`}
                   >
                     {item.label}
                   </button>
@@ -2220,14 +2227,14 @@ function Metric({
   icon: ReactElement
 }): ReactElement {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200/80 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{label}</p>
-        <span className="bg-brand-50 text-brand-700 grid size-10 place-items-center rounded-lg">
-          {icon}
-        </span>
+    <div className="stat-tile flex-row items-center gap-4">
+      <span className="bg-brand-50 text-brand-700 grid size-11 shrink-0 place-items-center rounded-xl text-lg">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="stat-tile-label">{label}</p>
+        <p className="stat-tile-value mt-0.5 text-2xl break-words">{value}</p>
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
     </div>
   )
 }
