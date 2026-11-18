@@ -99,7 +99,14 @@ const actions: Record<DashboardView, QuickAction[]> = {
   ]
 }
 
-export default function QuickActions({ view }: { view: DashboardView }): ReactElement | null {
+export default function QuickActions({
+  view,
+  tone = 'light'
+}: {
+  view: DashboardView
+  /** `hero` styles the shortcuts for the deep-teal summary band. */
+  tone?: 'light' | 'hero'
+}): ReactElement | null {
   const { account } = useAccount()
   const permitted = actions[view].filter(
     (action) => account !== null && canAccessPath(account.role, action.to)
@@ -113,20 +120,41 @@ export default function QuickActions({ view }: { view: DashboardView }): ReactEl
           key={label}
           to={to}
           search={to === '/suppliers' ? { tab } : undefined}
-          className={`flex min-w-0 items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-            index === 0
-              ? 'bg-brand-600 border-brand-600 hover:bg-brand-700 text-white'
-              : 'hover:border-brand-300 hover:bg-brand-50 border-slate-200 bg-white text-slate-800'
+          className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+            tone === 'hero'
+              ? index === 0
+                ? 'text-brand-900 hover:bg-brand-50 border-white bg-white shadow-sm'
+                : 'border-white/20 bg-white/10 text-white hover:border-white/35 hover:bg-white/15'
+              : index === 0
+                ? 'bg-brand-700 border-brand-700 hover:bg-brand-800 text-white'
+                : 'hover:border-brand-300 hover:bg-brand-50 border-slate-200 bg-white text-slate-800'
           }`}
         >
-          <Icon
-            className={`size-5 shrink-0 ${index === 0 ? 'text-white' : 'text-brand-600'}`}
-            aria-hidden="true"
-          />
+          <span
+            className={`grid size-10 shrink-0 place-items-center rounded-lg ${
+              tone === 'hero'
+                ? index === 0
+                  ? 'bg-brand-50 text-brand-700'
+                  : 'text-brand-100 bg-white/10'
+                : index === 0
+                  ? 'bg-white/15 text-white'
+                  : 'bg-brand-50 text-brand-700'
+            }`}
+          >
+            <Icon className="size-5" aria-hidden="true" />
+          </span>
           <span className="min-w-0">
             <span className="block text-sm font-semibold">{label}</span>
             <span
-              className={`block text-xs leading-5 ${index === 0 ? 'text-white' : 'text-slate-600'}`}
+              className={`block text-xs leading-5 ${
+                tone === 'hero'
+                  ? index === 0
+                    ? 'text-slate-600'
+                    : 'text-brand-100'
+                  : index === 0
+                    ? 'text-white'
+                    : 'text-slate-600'
+              }`}
             >
               {description}
             </span>

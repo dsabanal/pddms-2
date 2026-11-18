@@ -138,7 +138,7 @@ export default function ReportingWorkspace(): ReactElement {
   return (
     <DashboardShell pageTitle="Reports">
       <div className="space-y-5">
-        <header className="page-intro">
+        <header className="page-intro hero-band">
           <p className="eyebrow">Business</p>
           <div className="flex items-center gap-1.5">
             <h1 className="page-title mt-0.5">Reports</h1>
@@ -312,16 +312,20 @@ export default function ReportingWorkspace(): ReactElement {
                   </button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
                 {report.metrics.map((metric, index) => (
                   <article
-                    className={`rounded-lg border p-4 ${index === 0 ? 'border-brand-200 bg-brand-50/60' : 'border-slate-200 bg-white'}`}
+                    className={`rounded-xl border p-4 ${index === 0 ? 'bg-sidebar-900 border-transparent text-white' : 'border-slate-200 bg-slate-50/60'}`}
                     key={metric.label}
                   >
-                    <p className="text-sm font-semibold text-slate-600">
+                    <p
+                      className={`text-sm font-semibold ${index === 0 ? 'text-brand-100' : 'text-slate-600'}`}
+                    >
                       {titleCase(metric.label)}
                     </p>
-                    <p className="mt-1 text-2xl font-bold break-words text-slate-950 tabular-nums">
+                    <p
+                      className={`mt-1 text-2xl font-extrabold tracking-tight break-words tabular-nums ${index === 0 ? 'text-white' : 'text-slate-950'}`}
+                    >
                       {metric.format === 'money'
                         ? money(metric.value)
                         : metric.value.toLocaleString()}

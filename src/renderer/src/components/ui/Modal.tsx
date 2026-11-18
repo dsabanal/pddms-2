@@ -80,7 +80,7 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`app-dialog relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${width} min-w-0 flex-col overflow-hidden rounded-lg bg-white shadow-2xl outline-none`}
+        className={`app-dialog relative z-10 flex max-h-[calc(100dvh-2rem)] w-full ${width} min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl outline-none`}
       >
         <div className="min-h-0 overflow-x-hidden overflow-y-auto p-5 sm:p-6">
           <div className="mb-5 flex items-start justify-between gap-3 border-b border-slate-200 pb-4">

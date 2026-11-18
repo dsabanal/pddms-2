@@ -3,8 +3,8 @@
 /*
  * Med Prix design tokens.
  *
- * Note: Follows the "Pharmacy Management" reference: dark slate sidebar, teal accent, light
- * grey-blue canvas and flat white panels with thin borders. Status colours (emerald, amber, rose,
+ * Note: 2026-11 redesign: deep pharmacy-teal sidebar and summary bands, teal accent, soft
+ * teal-grey canvas and rounded white cards with soft shadows. Status colours (emerald, amber, rose,
  * sky) come from the default Tailwind palette and are used only for status, never decoration.
  */
 @theme {
@@ -20,10 +20,10 @@
   --color-brand-800: #0b555b;
   --color-brand-900: #0e464b;
   --color-brand-950: #032a2e;
-  --color-sidebar-950: #1d242e;
-  --color-sidebar-900: #283342;
-  --color-sidebar-800: #354253;
-  --color-canvas: #edf1f5;
+  --color-sidebar-950: #042629;
+  --color-sidebar-900: #073a3e;
+  --color-sidebar-800: #0d4b50;
+  --color-canvas: #f1f5f5;
   /* Note: Small print (hints, badges, table headers) is 13px rather than 12px, for legibility. */
   --text-xs: 0.8125rem;
   --text-xs--line-height: 1.4;
@@ -73,7 +73,7 @@
   .glass-surface,
   .table-surface,
   .metric-card {
-    @apply relative rounded-lg border border-slate-200 bg-white shadow-[0_1px_2px_rgb(15_23_42/0.05)];
+    @apply relative rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgb(15_23_42/0.06),0_1px_2px_rgb(15_23_42/0.04)];
   }
 
   .table-surface {
@@ -139,7 +139,7 @@
    * 14-16px with 1.5 line height. Titles, labels and buttons use title case.
    */
   .page-title {
-    @apply leading-tight font-bold tracking-tight text-slate-950;
+    @apply leading-tight font-extrabold tracking-tight text-slate-950;
     /* Note: Fluid size (26px in narrow windows up to 32px on wide screens) keeps long titles on one line. */
     font-size: clamp(1.625rem, 1.05rem + 1.1vw, 2rem);
   }
@@ -188,7 +188,7 @@
 
   /* Forms */
   .field {
-    @apply focus:border-brand-500 focus:ring-brand-100 min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-500 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+    @apply focus:border-brand-500 focus:ring-brand-100 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-500 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
   }
 
   .field:hover:not(:disabled, :focus, [aria-invalid='true']) {
@@ -206,19 +206,19 @@
 
   /* Buttons */
   .primary-button {
-    @apply bg-brand-600 hover:bg-brand-700 active:bg-brand-800 focus-visible:ring-brand-300 inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply bg-brand-700 hover:bg-brand-800 active:bg-brand-900 focus-visible:ring-brand-300 inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
   }
 
   .secondary-button {
-    @apply focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 active:bg-slate-100;
+    @apply focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 active:bg-slate-100;
   }
 
   .danger-button {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md border border-rose-300 bg-white px-3.5 text-sm font-medium text-rose-700 transition-colors hover:border-rose-400 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-200;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-300 bg-white px-3.5 text-sm font-medium text-rose-700 transition-colors hover:border-rose-400 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-200;
   }
 
   .icon-button {
-    @apply focus-visible:ring-brand-200 grid size-10 shrink-0 place-items-center rounded-md border border-slate-300 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2;
+    @apply focus-visible:ring-brand-200 grid size-10 shrink-0 place-items-center rounded-lg border border-slate-300 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2;
   }
 
   .primary-button,
@@ -255,6 +255,60 @@
   .status-badge:not(:has(svg))::before {
     @apply size-1.5 shrink-0 rounded-full bg-current opacity-80;
     content: '';
+  }
+
+  /*
+   * Summary band: the deep-teal header that opens the redesigned demo pages (dashboard, sales,
+   * inventory, suppliers, reports). Text on it is white or brand-100 for contrast.
+   */
+  .hero-band {
+    @apply bg-sidebar-900 relative overflow-hidden rounded-2xl px-6 py-6 text-white shadow-sm sm:px-8 sm:py-7;
+  }
+
+  .hero-band::after {
+    @apply bg-brand-500/25 pointer-events-none absolute -top-24 -right-16 size-72 rounded-full blur-3xl;
+    content: '';
+  }
+
+  .hero-band > * {
+    @apply relative z-[1];
+  }
+
+  .hero-band .page-title {
+    @apply text-white;
+  }
+
+  .hero-band .eyebrow {
+    @apply text-brand-200;
+  }
+
+  .hero-band .info-tip-button {
+    @apply text-brand-100 hover:bg-white/10 hover:text-white aria-expanded:bg-white/10 aria-expanded:text-white;
+  }
+
+  .hero-band .secondary-button {
+    @apply border-white/25 bg-white/10 text-white shadow-none hover:border-white/40 hover:bg-white/20 active:bg-white/25;
+  }
+
+  .hero-band .icon-button {
+    @apply border-white/25 bg-white/10 text-white shadow-none hover:bg-white/20 hover:text-white;
+  }
+
+  .hero-band .primary-button {
+    @apply text-brand-900 hover:bg-brand-50 active:bg-brand-100 bg-white;
+  }
+
+  /* Key-figure tile: label, big number and an optional note. */
+  .stat-tile {
+    @apply relative flex min-w-0 flex-col rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)];
+  }
+
+  .stat-tile-label {
+    @apply text-sm font-medium text-slate-600;
+  }
+
+  .stat-tile-value {
+    @apply mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight text-slate-950 tabular-nums;
   }
 
   /* Sign-in and first-launch setup */

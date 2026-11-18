@@ -166,23 +166,23 @@ export default function SummaryCard({ metric }: { metric: DashboardSummaryMetric
         : 'bg-rose-50 text-rose-700'
 
   return (
-    <article className="metric-card group relative flex min-w-0 flex-col overflow-hidden p-0">
+    <article className="metric-card group relative flex min-w-0 flex-col overflow-hidden p-0 shadow-[0_8px_24px_-12px_rgb(4_38_41/0.35)]">
       <div className="flex-1 p-5">
-        <div className="relative flex items-start justify-between gap-3">
+        <div className="relative flex items-center gap-3">
           <div
-            className={`grid size-10 shrink-0 place-items-center rounded-lg ring-1 ${config.iconClassName}`}
+            className={`grid size-9 shrink-0 place-items-center rounded-lg ring-1 ${config.iconClassName}`}
           >
             <config.icon className="size-4.5" aria-hidden="true" />
           </div>
+          <p className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{metric.label}</p>
           {metric.sparkline.length > 1 && (
-            <div className="-mt-1 -mr-1 opacity-85">
+            <div className="-my-2 -mr-1 opacity-85">
               <Sparkline values={metric.sparkline} color={config.color} />
             </div>
           )}
         </div>
         <div className="relative mt-4">
-          <p className="text-sm font-medium text-slate-600">{metric.label}</p>
-          <p className="mt-1 text-[1.75rem] leading-tight font-bold tracking-tight break-words text-slate-950 tabular-nums">
+          <p className="text-[2rem] leading-none font-extrabold tracking-tight break-words text-slate-950 tabular-nums">
             {formatMetric(metric)}
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function SummaryCard({ metric }: { metric: DashboardSummaryMetric
         <Link
           to={destination.to}
           search={destination.to === '/suppliers' ? { tab: destination.tab } : undefined}
-          className="hover:bg-brand-50 hover:text-brand-800 text-brand-800 flex items-center justify-center gap-1.5 border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold transition-colors"
+          className="hover:bg-brand-50 text-brand-800 flex items-center justify-between gap-1.5 border-t border-slate-100 px-5 py-3 text-sm font-semibold transition-colors"
         >
           {destination.label} <FiChevronsRight aria-hidden="true" />
         </Link>

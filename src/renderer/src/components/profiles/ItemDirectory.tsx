@@ -84,7 +84,7 @@ export default function ItemDirectory(): ReactElement {
   return (
     <DashboardShell pageTitle="Inventory & Expiry">
       <div className="space-y-5 sm:space-y-6">
-        <section className="page-intro">
+        <section className="page-intro hero-band">
           <div className="page-intro-content page-header">
             <div className="max-w-2xl min-w-0">
               <p className="eyebrow">Stock & purchasing</p>
@@ -178,7 +178,9 @@ export default function ItemDirectory(): ReactElement {
           />
         )}
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* Note: 2026-11 redesign: the figures show as a strip above the list (order-first), so
+            the list of medicines gets the full width. */}
+        <div className="grid gap-5">
           <section className="panel min-w-0 overflow-hidden">
             <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
@@ -322,7 +324,7 @@ export default function ItemDirectory(): ReactElement {
             </div>
           </section>
 
-          <aside className="grid content-start gap-5 sm:grid-cols-3 xl:grid-cols-1">
+          <aside className="order-first grid content-start gap-5 sm:grid-cols-3">
             <InventoryMetric
               icon={<FiAlertTriangle />}
               label="Needs Attention"
@@ -383,24 +385,26 @@ function InventoryMetric({
     <section
       className={`panel p-5 ${danger ? 'border-rose-300 bg-rose-50/60 ring-1 ring-rose-200' : ''}`}
     >
-      <div className="relative">
+      <div className="relative flex items-start gap-4">
         <div
-          className={`grid size-10 place-items-center rounded-lg border shadow-sm ${danger ? 'border-rose-200 bg-rose-100 text-rose-700' : 'text-brand-700 border-slate-200 bg-white'}`}
+          className={`grid size-12 shrink-0 place-items-center rounded-xl text-lg ${danger ? 'bg-rose-100 text-rose-700' : 'bg-brand-50 text-brand-700'}`}
         >
           {icon}
         </div>
-        <p className={`mt-5 text-sm font-semibold ${danger ? 'text-rose-800' : 'text-slate-600'}`}>
-          {label}
-        </p>
-        <p
-          className={`mt-1 text-3xl font-bold tracking-tight ${danger ? 'text-rose-700' : 'text-slate-950'}`}
-        >
-          {value}
-        </p>
-        <p className={`mt-2 text-xs leading-5 ${danger ? 'text-rose-800' : 'text-slate-500'}`}>
-          {description}
-        </p>
-        {action && <div className="mt-2">{action}</div>}
+        <div className="min-w-0">
+          <p className={`text-sm font-semibold ${danger ? 'text-rose-800' : 'text-slate-600'}`}>
+            {label}
+          </p>
+          <p
+            className={`mt-0.5 text-3xl leading-tight font-extrabold tracking-tight ${danger ? 'text-rose-700' : 'text-slate-950'}`}
+          >
+            {value}
+          </p>
+          <p className={`mt-1 text-xs leading-5 ${danger ? 'text-rose-800' : 'text-slate-600'}`}>
+            {description}
+          </p>
+          {action && <div className="mt-1.5">{action}</div>}
+        </div>
       </div>
     </section>
   )

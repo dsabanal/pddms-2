@@ -63,6 +63,12 @@ function DashboardError({
   )
 }
 
+const dateFormatter = new Intl.DateTimeFormat('en-PH', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric'
+})
+
 const views: Record<DashboardView, { title: string; subtitle: string }> = {
   admin: {
     title: 'Admin Dashboard',
@@ -115,16 +121,17 @@ export default function AdminDashboard(): ReactElement {
             </div>
           )}
           <section id="overview" className="scroll-mt-28">
-            <div className="page-intro">
-              <div className="page-intro-content">
-                <div className="flex items-center gap-1.5">
-                  <h1 className="page-title">{views[view].title}</h1>
-                  <InfoTip label={views[view].title}>{views[view].subtitle}</InfoTip>
-                </div>
+            {/* Note: 2026-11 redesign: title and shortcuts sit in a deep-teal summary band, with
+                the key figures overlapping its lower edge. */}
+            <div className="hero-band pb-16 sm:pb-20">
+              <p className="eyebrow">{dateFormatter.format(new Date())}</p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <h1 className="page-title">{views[view].title}</h1>
+                <InfoTip label={views[view].title}>{views[view].subtitle}</InfoTip>
               </div>
+              <QuickActions view={view} tone="hero" />
             </div>
-            <QuickActions view={view} />
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative z-[2] -mt-10 grid gap-5 px-3 sm:-mt-12 sm:grid-cols-2 sm:px-5 lg:grid-cols-4">
               {data.summaryMetrics.map((metric) => (
                 <SummaryCard key={metric.id} metric={metric} />
               ))}

@@ -11,16 +11,19 @@ export default function PageHeader({
   section,
   title,
   description,
-  actions
+  actions,
+  hero = false
 }: {
   /** Parent area shown before the title, e.g. "Stock & purchasing". */
   section?: string
   title: string
   description?: ReactNode
   actions?: ReactNode
+  /** Shows the heading in the deep-teal summary band used on the main demo pages. */
+  hero?: boolean
 }): ReactElement {
   return (
-    <header className="page-header">
+    <header className={`page-header ${hero ? 'hero-band' : ''}`}>
       <div className="min-w-0">
         {section && <p className="eyebrow">{section}</p>}
         <div className="mt-0.5 flex items-center gap-1.5">
