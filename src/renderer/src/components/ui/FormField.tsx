@@ -57,7 +57,7 @@ export default function FormField({
         })}
       </div>
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs leading-5 text-slate-500">
+        <p id={`${id}-hint`} className="mt-1 text-xs leading-5 text-slate-600">
           {hint}
         </p>
       )}
@@ -87,7 +87,7 @@ export function FormError({ message }: { message: string }): ReactElement | null
 
 export function RequiredNote(): ReactElement {
   return (
-    <p className="text-xs text-slate-500">
+    <p className="text-xs text-slate-600">
       Fields marked <span className="required-mark">*</span> are required.
     </p>
   )

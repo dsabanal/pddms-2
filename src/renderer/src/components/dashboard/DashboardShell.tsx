@@ -1,3 +1,4 @@
+import TextSizeControl from '@renderer/components/ui/TextSize'
 import type { DashboardSourceMetadata } from '@renderer/data/adminDashboard'
 import { useAccount } from '@renderer/hooks/useAccount'
 import { canAccessPath } from '@renderer/navigation/access'
@@ -178,14 +179,14 @@ function Sidebar({
                     search={to === '/suppliers' ? { tab } : undefined}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={onClose}
-                    className={`group mx-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    className={`group mx-3 flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium transition-colors ${
                       isActive
                         ? 'text-brand-900 bg-white font-semibold shadow-sm'
                         : 'text-brand-50 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <Icon
-                      className={`size-4.5 shrink-0 ${isActive ? 'text-brand-600' : 'text-brand-200'}`}
+                      className={`size-5 shrink-0 ${isActive ? 'text-brand-600' : 'text-brand-200'}`}
                       aria-hidden="true"
                     />
                     <span>{label}</span>
@@ -215,7 +216,7 @@ function Sidebar({
             type="button"
             onClick={logout}
             disabled={isSigningOut}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-white/15 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-white/25 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-wait disabled:opacity-60"
           >
             <FiLogOut /> {isSigningOut ? 'Signing Out…' : 'Sign Out'}
           </button>
@@ -311,7 +312,7 @@ export default function DashboardShell({
             role="dialog"
             aria-label="Dashboard navigation"
             aria-modal="true"
-            className="fixed inset-y-0 left-0 z-50 w-64 shadow-2xl lg:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-72 shadow-2xl lg:hidden"
           >
             <Sidebar
               activePath={activePath}
@@ -321,10 +322,10 @@ export default function DashboardShell({
           </aside>
         </>
       )}
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 overflow-hidden lg:block">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 overflow-hidden lg:block">
         <Sidebar activePath={activePath} />
       </aside>
-      <div className="min-w-0 lg:pl-64">
+      <div className="min-w-0 lg:pl-72">
         <header className="glass-header sticky top-0 z-30">
           <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
             <div className="flex min-w-0 items-center gap-3">
@@ -344,12 +345,13 @@ export default function DashboardShell({
                 <p className="truncate text-base font-semibold tracking-tight text-slate-900">
                   {pageTitle}
                 </p>
-                <p className="hidden truncate text-xs text-slate-500 sm:block">
+                <p className="hidden truncate text-sm text-slate-600 sm:block">
                   {dateFormatter.format(generatedAt)}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <TextSizeControl />
               {source && (
                 <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 sm:inline-flex">
                   <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
@@ -357,7 +359,7 @@ export default function DashboardShell({
                 </span>
               )}
               {(source || isLoading) && (
-                <span className="hidden text-xs text-slate-500 md:inline">
+                <span className="hidden text-xs text-slate-600 md:inline">
                   {source ? `Updated ${timeFormatter.format(generatedAt)}` : 'Loading data'}
                 </span>
               )}

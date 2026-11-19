@@ -47,18 +47,18 @@ export default function SalesCategoryChart({
             <h3 id="sales-category-title" className="font-semibold tracking-tight text-slate-950">
               Sales by Category
             </h3>
-            <p className="mt-0.5 text-xs leading-5 text-slate-500">Recorded revenue mix</p>
+            <p className="mt-0.5 text-xs leading-5 text-slate-600">Recorded revenue mix</p>
           </div>
         </div>
       </header>
       {categories.length === 0 ? (
         <div className="grid flex-1 place-items-center px-6 py-14 text-center">
           <div>
-            <div className="mx-auto grid size-12 place-items-center rounded-lg bg-slate-100/80 text-slate-500 ring-1 ring-white/80">
+            <div className="mx-auto grid size-12 place-items-center rounded-lg bg-slate-100/80 text-slate-600 ring-1 ring-white/80">
               <FiPieChart aria-hidden="true" />
             </div>
             <p className="mt-3 text-sm font-medium text-slate-700">No category sales yet.</p>
-            <p className="mt-1 text-xs text-slate-500">Completed sales will populate this chart.</p>
+            <p className="mt-1 text-xs text-slate-600">Completed sales will populate this chart.</p>
           </div>
         </div>
       ) : (

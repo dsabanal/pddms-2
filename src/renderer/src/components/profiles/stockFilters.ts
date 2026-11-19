@@ -1,4 +1,5 @@
 import { getItemStock, getStockStatus, type ItemProfile } from '@renderer/data/profiles'
+import { formatId, matchesId } from '@shared/identifiers'
 import { getExpiryStatus } from '@shared/inventory'
 
 export type StockFilter =
@@ -22,11 +23,12 @@ export function matchesFilter(item: ItemProfile, filter: StockFilter): boolean {
   )
 }
 
-/** Brand, generic name, category and formulation all match every typed word. */
+/** Medicine ID (MED-000012), brand, generic name, category and formulation match every word. */
 export const matchesSearch = (item: ItemProfile, query: string): boolean => {
+  if (matchesId(query, 'product', item.id)) return true
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const text =
-    `${item.genericName} ${item.brandName} ${item.category} ${item.formulation}`.toLowerCase()
+    `${formatId('product', item.id)} ${item.genericName} ${item.brandName} ${item.category} ${item.formulation}`.toLowerCase()
   return terms.every((term) => text.includes(term))
 }
 

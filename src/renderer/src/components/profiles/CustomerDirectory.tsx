@@ -3,6 +3,7 @@ import InfoTip from '@renderer/components/ui/InfoTip'
 import { useAccount } from '@renderer/hooks/useAccount'
 import { canAccessPath } from '@renderer/navigation/access'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
+import { customerId, matchesId } from '@shared/identifiers'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import {
@@ -35,7 +36,8 @@ export default function CustomerDirectory(): ReactElement {
     return customers.filter(
       (customer) =>
         !search ||
-        `${customer.fullName} ${customer.phone} ${customer.email} ${customer.discountId}`
+        matchesId(search, 'customer', customer.id) ||
+        `${customerId(customer)} ${customer.fullName} ${customer.phone} ${customer.email} ${customer.discountId}`
           .toLowerCase()
           .includes(search)
     )
@@ -59,7 +61,7 @@ export default function CustomerDirectory(): ReactElement {
   return (
     <DashboardShell pageTitle="Customers">
       <div className="space-y-5 sm:space-y-6">
-        <section className="page-intro">
+        <section className="page-intro hero-band">
           <div className="page-intro-content page-header">
             <div className="max-w-2xl">
               <p className="eyebrow">Daily work</p>
@@ -95,12 +97,13 @@ export default function CustomerDirectory(): ReactElement {
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* Note: 2026-11 redesign: figures as a strip above a full-width directory (order-first). */}
+        <div className="grid gap-5">
           <section className="panel min-w-0 overflow-hidden">
             <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
                 <h3 className="section-title">Directory</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-600">
                   Search, then open a record to view its details.
                 </p>
               </div>
@@ -125,7 +128,7 @@ export default function CustomerDirectory(): ReactElement {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, phone, email, or discount ID"
+                  placeholder="Search name, customer ID (CUS-000012), phone or discount ID"
                   className="field mt-0 pl-10"
                 />
               </label>
@@ -144,7 +147,8 @@ export default function CustomerDirectory(): ReactElement {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-slate-900">{customer.fullName}</p>
-                    <p className="mt-1 truncate text-sm text-slate-500">
+                    <p className="id-code mt-1">{customerId(customer)}</p>
+                    <p className="mt-1 truncate text-sm text-slate-600">
                       {customer.phone}
                       {customer.email ? ` · ${customer.email}` : ''}
                     </p>
@@ -169,7 +173,7 @@ export default function CustomerDirectory(): ReactElement {
                   <p className="mt-4 font-medium text-slate-700">
                     {customers.length ? 'No customers match this search.' : 'No customers yet.'}
                   </p>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-600">
                     Try another name, contact detail, or discount ID.
                   </p>
                 </div>
@@ -177,7 +181,7 @@ export default function CustomerDirectory(): ReactElement {
             </div>
           </section>
 
-          <aside className="grid gap-5 sm:grid-cols-3 xl:grid-cols-1">
+          <aside className="order-first grid gap-5 sm:grid-cols-3">
             <DirectoryMetric
               icon={<FiUsers />}
               label="Retail Customers"
@@ -215,14 +219,14 @@ function DirectoryMetric({
   description: string
 }): ReactElement {
   return (
-    <section className="glass-surface relative overflow-hidden rounded-lg p-5">
-      <div className="relative">
-        <div className="text-brand-700 grid size-10 place-items-center rounded-lg border border-slate-200 bg-white shadow-sm">
-          {icon}
-        </div>
-        <p className="mt-5 text-sm font-semibold text-slate-600">{label}</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{value}</p>
-        <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
+    <section className="stat-tile flex-row items-start gap-4">
+      <div className="bg-brand-50 text-brand-700 grid size-12 shrink-0 place-items-center rounded-xl text-lg">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="stat-tile-label font-semibold">{label}</p>
+        <p className="stat-tile-value mt-0.5 text-3xl">{value}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
       </div>
     </section>
   )

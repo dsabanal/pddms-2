@@ -115,7 +115,9 @@ export function ReceiptSlip({ sale }: { sale: SaleRecord }): ReactElement {
       <Rule />
       <Row left={`DATE: ${model.date}`} right={`TIME: ${model.time}`} />
       <p>RECEIPT NO: {model.number}</p>
-      <p className="text-[10px] break-all">REF: {model.reference}</p>
+      {model.reference !== model.number && (
+        <p className="text-[10px] break-all">REF: {model.reference}</p>
+      )}
       <p>CASHIER: {model.cashier}</p>
       <p className="break-words">CUSTOMER: {model.customer}</p>
       {model.discountLine && <p className="break-words">{model.discountLine}</p>}

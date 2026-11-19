@@ -78,7 +78,7 @@ export function ReportTable({ report }: { report: BusinessReport }): ReactElemen
         </tbody>
       </table>
       {!report.rows.length && (
-        <p className="p-5 text-slate-500">No matching records for this report.</p>
+        <p className="p-5 text-slate-600">No matching records for this report.</p>
       )}
     </div>
   )

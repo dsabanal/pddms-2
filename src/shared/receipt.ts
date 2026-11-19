@@ -1,3 +1,4 @@
+import { formatId } from './identifiers'
 import { money, type SaleLine, type SaleRecord } from './sales'
 import { quantityLabel } from './units'
 
@@ -18,9 +19,8 @@ export const businessContact = `Contact No. ${business.phone}`
 /** Tax line, e.g. "TIN 000-000-000-000". */
 export const businessTin = `TIN ${business.tin}`
 
-/** Short, scannable receipt number, e.g. MP00000012. The full sale reference is printed too. */
-export const receiptNumber = (sale: Pick<SaleRecord, 'id'>): string =>
-  `MP${String(sale.id).padStart(8, '0')}`
+/** Receipt number: the sale's transaction number, e.g. TXN-000012. */
+export const receiptNumber = (sale: Pick<SaleRecord, 'id'>): string => formatId('sale', sale.id)
 
 // Note: Standard Code 128 bar/space widths for values 0-106 (106 is the stop pattern).
 const CODE128 =
@@ -210,7 +210,7 @@ export function receiptPlainText(sale: SaleRecord): string {
     dashed,
     pad(`DATE: ${model.date}`, `TIME: ${model.time}`),
     `RECEIPT NO: ${model.number}`,
-    wrap(`REF: ${model.reference}`),
+    ...(model.reference === model.number ? [] : [wrap(`REF: ${model.reference}`)]),
     `CASHIER: ${model.cashier}`,
     wrap(`CUSTOMER: ${model.customer}`),
     ...(model.discountLine ? [wrap(model.discountLine)] : []),
@@ -277,7 +277,7 @@ ${model.voidNote ? `<div class="rule"></div><div class="center total">*** VOID *
 <div class="rule"></div>
 ${row(`DATE: ${model.date}`, `TIME: ${model.time}`)}
 <div>RECEIPT NO: ${escapeHtml(model.number)}</div>
-<div class="wrap muted">REF: ${escapeHtml(model.reference)}</div>
+${model.reference === model.number ? '' : `<div class="wrap muted">REF: ${escapeHtml(model.reference)}</div>`}
 <div>CASHIER: ${escapeHtml(model.cashier)}</div>
 <div>CUSTOMER: ${escapeHtml(model.customer)}</div>
 ${model.discountLine ? `<div>${escapeHtml(model.discountLine)}</div>` : ''}

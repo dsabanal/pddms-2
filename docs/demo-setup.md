@@ -56,7 +56,9 @@ Dashboard figures are calculated live from these records; none are stored as fix
 
 ## Safety rules
 
-- The demo database is a separate file (`pddms-demo.db`, ignored by Git like every `*.db`).
+- The demo database is a separate file (`pddms-demo.db`, ignored by Git like every `*.db`) with the
+  same tables as `pddms.db`. The app opens one database at a time: the demo file replaces
+  `pddms.db` while the demo runs; the two are never used together.
   `npm run dev` and installed builds keep using their own database and the first-launch Master
   Account setup.
 - Setup refuses any database file that already contains records that are not demo data, and an

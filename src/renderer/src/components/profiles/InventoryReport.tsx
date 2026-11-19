@@ -74,7 +74,7 @@ export default function InventoryReport({ items: all }: { items: ItemProfile[] }
                 <tr key={`${item.id}-${batch?.id ?? 'empty'}`}>
                   <td className="max-w-60 px-4 py-3 break-words">
                     {item.brandName}
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       {item.genericName} · {item.formulation}
                     </p>
                   </td>
@@ -96,7 +96,7 @@ export default function InventoryReport({ items: all }: { items: ItemProfile[] }
                       className={
                         batch && getExpiryStatus(batch.expiresAt) === 'expired'
                           ? 'text-rose-700'
-                          : 'text-slate-500'
+                          : 'text-slate-600'
                       }
                     >
                       {batch ? expiryLabels[getExpiryStatus(batch.expiresAt)] : '—'}

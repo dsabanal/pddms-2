@@ -152,7 +152,7 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
               brandName,
               genericName: 'Generic',
               formulation: '500 mg tablet',
-              category: 'Medicine',
+              category: 'Others',
               isPrescribed: false,
               isControlled: false,
               reorderLevel: 5
@@ -301,8 +301,9 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       assert.equal((await wholesalePrice(-1)).success, false)
       assert.equal((await wholesalePrice(90)).success, true)
       assert.equal(
-        (await ok(channels.product.getAll)).products.find((product) => product.id === products[0].id)
-          .batches[0].wholesaleBoxPrice,
+        (await ok(channels.product.getAll)).products.find(
+          (product) => product.id === products[0].id
+        ).batches[0].wholesaleBoxPrice,
         90
       )
       await bad(channels.wholesale.create, { ...draft, requestId: randomUUID(), items: [lines[0]] })
@@ -545,7 +546,8 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       assert.equal((await ok(channels.wholesale.list, { search: 'no match' })).length, 0)
       // Orders an older version placed for retail customers: unpaid and undelivered ones are
       // voided, the rest are kept and flagged for review.
-      const { up: qaFixes } = await import('../migrations/1789001400000_qa_fixes_payments_prices.ts')
+      const { up: qaFixes } =
+        await import('../migrations/1789001400000_qa_fixes_payments_prices.ts')
       const oldRetail = await db
         .insertInto('customers')
         .values({
@@ -592,7 +594,11 @@ if (!process.env.WHOLESALE_TEST_PHASE) {
       await qaFixes(db)
       await qaFixes(db)
       const legacyOrder = (orderId) =>
-        db.selectFrom('wholesaleOrders').selectAll().where('id', '=', orderId).executeTakeFirstOrThrow()
+        db
+          .selectFrom('wholesaleOrders')
+          .selectAll()
+          .where('id', '=', orderId)
+          .executeTakeFirstOrThrow()
       assert.equal((await legacyOrder(legacyUnpaid)).status, 'cancelled')
       assert.match((await legacyOrder(legacyUnpaid)).reviewNote, /^Voided/)
       assert.equal((await legacyOrder(legacyPaid)).status, 'scheduled')

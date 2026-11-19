@@ -3,7 +3,10 @@ import './assets/index.css'
 import { createHashHistory, createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { applySavedTextSize } from './components/ui/textSizeSettings'
 import { routeTree } from './routeTree.gen'
+
+applySavedTextSize()
 
 const router = createRouter({
   routeTree,

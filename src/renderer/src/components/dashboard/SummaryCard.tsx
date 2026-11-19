@@ -182,7 +182,7 @@ export default function SummaryCard({ metric }: { metric: DashboardSummaryMetric
           )}
         </div>
         <div className="relative mt-4">
-          <p className="text-[2rem] leading-none font-extrabold tracking-tight break-words text-slate-950 tabular-nums">
+          <p className="fit-figure text-[2rem] leading-none font-extrabold tracking-tight text-slate-950 tabular-nums">
             {formatMetric(metric)}
           </p>
         </div>

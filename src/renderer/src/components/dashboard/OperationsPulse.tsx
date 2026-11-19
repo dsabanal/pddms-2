@@ -63,7 +63,7 @@ export default function OperationsPulse({
           </div>
           <div>
             <h3 className="font-semibold tracking-tight text-slate-950">Purchasing and Stock</h3>
-            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+            <p className="mt-0.5 text-xs leading-5 text-slate-600">
               Open purchase orders, supplier invoices due and stock signals
             </p>
           </div>
@@ -75,7 +75,7 @@ export default function OperationsPulse({
       {items.length === 0 ? (
         <div className="px-6 py-12 text-center">
           <p className="text-sm font-medium text-slate-700">No operational updates.</p>
-          <p className="mt-1 text-xs text-slate-500">New alerts will appear as work progresses.</p>
+          <p className="mt-1 text-xs text-slate-600">New alerts will appear as work progresses.</p>
         </div>
       ) : (
         <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -103,7 +103,7 @@ export default function OperationsPulse({
                     : numberFormatter.format(item.value)}
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-700">{item.label}</p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">{item.detail}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{item.detail}</p>
                 {account && canAccessPath(account.role, destinations[item.id].to) && (
                   <Link
                     to={destinations[item.id].to}

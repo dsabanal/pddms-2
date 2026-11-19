@@ -25,7 +25,7 @@ export default function ModulePage({
             </div>
             <p className="eyebrow mt-6">{eyebrow}</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{title}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{description}</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
           </div>
         </div>
         <aside className="panel relative overflow-hidden p-6 sm:p-7">
@@ -35,7 +35,7 @@ export default function ModulePage({
               <span className="size-2 rounded-full bg-amber-500" aria-hidden="true" />
             </div>
             <p className="mt-5 text-sm font-semibold text-slate-800">Not yet implemented</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               This page is reserved for a future implementation. It does not currently display or
               record production data.
             </p>

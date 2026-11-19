@@ -1,5 +1,7 @@
 import { db } from '@main/db'
 import { deductBatchStock } from '@main/inventory/repository'
+import { reservedPiecesFor } from '@main/wholesale/reservations'
+import { formatId } from '@shared/identifiers'
 import { isBatchSellable, localDate } from '@shared/inventory'
 import { calculateSale, priceToCents, type SaleLine } from '@shared/sales'
 import type { Database } from '@shared/types'
@@ -110,19 +112,7 @@ export async function getOrder(id: number, financial: boolean): Promise<Wholesal
  * delivery, so the order form subtracts these to show only boxes that are still free.
  */
 export async function reservedPieces(): Promise<Record<number, number>> {
-  const rows = await db
-    .selectFrom('wholesaleOrderItems')
-    .innerJoin('wholesaleOrders', 'wholesaleOrders.id', 'wholesaleOrderItems.orderId')
-    .select([
-      'wholesaleOrderItems.batchId',
-      sql<number>`SUM(wholesale_order_items.quantity * wholesale_order_items.pieces_per_unit)`.as(
-        'pieces'
-      )
-    ])
-    .where('wholesaleOrders.status', 'in', ['pending', 'scheduled'])
-    .groupBy('wholesaleOrderItems.batchId')
-    .execute()
-  return Object.fromEntries(rows.map((row) => [row.batchId, Number(row.pieces)]))
+  return reservedPiecesFor(db)
 }
 
 export async function overdueSummary(): Promise<{ count: number; remainingCents: number }> {
@@ -283,7 +273,8 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
       .values({
         requestId,
         requestFingerprint: fingerprint,
-        reference: `WHO-${randomUUID().toUpperCase()}`,
+        // Note: The number is made from the row id (WO-000123) and set right after the insert.
+        reference: `PENDING-${randomUUID()}`,
         customerId: customer.id,
         customerName: customer.fullName,
         customerPhone: customer.phone,
@@ -309,6 +300,11 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
       })
       .returning('id')
       .executeTakeFirstOrThrow()
+    await transaction
+      .updateTable('wholesaleOrders')
+      .set({ reference: formatId('wholesaleOrder', order.id) })
+      .where('id', '=', order.id)
+      .execute()
     await transaction
       .insertInto('wholesaleOrderItems')
       .values(items.map((item) => ({ ...item, orderId: order.id })))

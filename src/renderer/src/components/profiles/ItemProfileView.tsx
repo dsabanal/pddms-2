@@ -14,7 +14,9 @@ import {
 import { useAccount } from '@renderer/hooks/useAccount'
 import { setWholesalePrice } from '@renderer/services/profiles'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
+import { isMedicineCategory, medicineCategories } from '@shared/categories'
 import { productKey } from '@shared/duplicates'
+import { formatId } from '@shared/identifiers'
 import { expiryLabels, getExpiryStatus } from '@shared/inventory'
 import { MAX_REORDER_LEVEL } from '@shared/schemas'
 import { piecesLabel, unitSellPrice, wholesaleBoxPrice } from '@shared/units'
@@ -113,7 +115,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
             <FiArrowLeft /> Back to Inventory
           </Link>
           <form noValidate onSubmit={save} className="panel mx-auto max-w-3xl space-y-6 p-6 sm:p-7">
-            <div>
+            <div className="hero-band -mx-6 -mt-6 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
               <p className="eyebrow">Inventory</p>
               <div className="flex items-center gap-1.5">
                 <h1 className="page-title mt-0.5">Add New Product</h1>
@@ -122,8 +124,8 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                   when you receive products against a purchase order.
                 </InfoTip>
               </div>
-              <p className="mt-3 text-xs text-slate-500">
-                Fields marked <span className="text-rose-600">*</span> are required.
+              <p className="text-brand-100 mt-3 text-xs">
+                Fields marked <span className="text-rose-300">*</span> are required.
               </p>
             </div>
             <ProductFields
@@ -220,11 +222,12 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
         >
           <FiArrowLeft /> Back to Inventory
         </Link>
-        <section className="panel relative overflow-hidden p-6 sm:p-7">
-          <div className="relative flex flex-col justify-between gap-5 md:flex-row">
+        <section className="hero-band">
+          <div className="flex flex-col justify-between gap-5 md:flex-row">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="eyebrow">{item.category}</p>
+                <span className="id-code id-code-on-dark">{formatId('product', item.id)}</span>
                 <span
                   className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${status === 'in-stock' ? 'border-emerald-100 bg-emerald-50/80 text-emerald-700' : status === 'low-stock' ? 'border-amber-100 bg-amber-50/80 text-amber-700' : 'border-rose-100 bg-rose-50/80 text-rose-700'}`}
                 >
@@ -232,7 +235,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                 </span>
               </div>
               <h1 className="page-title mt-3 text-2xl">{item.brandName}</h1>
-              <p className="mt-3 text-sm text-slate-600 sm:text-base">
+              <p className="text-brand-100 mt-3 text-sm sm:text-base">
                 {item.genericName} · {item.formulation}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -280,13 +283,13 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
             onSubmit={(event) => void saveEdit(event)}
             className="panel mx-auto max-w-3xl space-y-6 p-6 sm:p-7"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="hero-band -mx-6 -mt-6 flex items-start justify-between gap-4 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
               <div>
                 <p className="eyebrow">Item details</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
                   Edit Product
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
+                <p className="text-brand-100 mt-3 text-sm leading-6">
                   Update catalog information without changing stock batch history.
                 </p>
               </div>
@@ -372,13 +375,13 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                       <td className="max-w-64 px-5 py-4 font-medium break-words">
                         {batch.batchNumber}
                         {batch.receipts.map((receipt, index) => (
-                          <p key={index} className="mt-1 text-xs font-normal text-slate-500">
+                          <p key={index} className="mt-1 text-xs font-normal text-slate-600">
                             {receipt.deliveredAt} · {receipt.orderNumber} · {receipt.quantity}{' '}
                             pieces received
                           </p>
                         ))}
                       </td>
-                      <td className="max-w-48 px-5 py-4 break-words text-slate-500">
+                      <td className="max-w-48 px-5 py-4 break-words text-slate-600">
                         {batch.supplier}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
@@ -388,7 +391,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                       <td className="px-5 py-4">
                         {currency.format(batch.sellPrice)} / piece
                         {batch.piecesPerBox > 1 && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-600">
                             {currency.format(
                               unitSellPrice(
                                 'box',
@@ -437,7 +440,7 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                 </tbody>
               </table>
               {item.batches.length === 0 && (
-                <p className="p-10 text-center text-sm text-slate-500">No active stock batches.</p>
+                <p className="p-10 text-center text-sm text-slate-600">No active stock batches.</p>
               )}
             </div>
           </div>
@@ -459,12 +462,12 @@ export default function ItemProfileView({ item }: { item: ItemProfile | null }):
                   </div>
                   <div className="min-w-0">
                     <p className="font-medium">{equivalent.brandName}</p>
-                    <p className="text-xs text-slate-500">{equivalent.formulation}</p>
+                    <p className="text-xs text-slate-600">{equivalent.formulation}</p>
                   </div>
                 </Link>
               ))}
               {equivalents.length === 0 && (
-                <p className="p-5 text-sm text-slate-500">No equivalent products recorded.</p>
+                <p className="p-5 text-sm text-slate-600">No equivalent products recorded.</p>
               )}
             </div>
           </div>
@@ -509,7 +512,7 @@ function Field({
         *
       </span>
       <span className="mt-1.5 block font-normal">{children}</span>
-      {hint && <span className="mt-1 block text-xs font-normal text-slate-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs font-normal text-slate-600">{hint}</span>}
     </label>
   )
 }
@@ -555,15 +558,22 @@ function ProductFields({
           onValueChange={(value) => update('genericName', value)}
         />
       </Field>
-      <Field label="Category">
-        <FilteredInput
-          rule="catalogText"
-          maxLength={120}
+      <Field label="Category" hint="Pick from the list. Choose Others if none fits.">
+        <select
           required
-          placeholder={'e.g. Analgesics'}
-          value={draft.category}
-          onValueChange={(value) => update('category', value)}
-        />
+          className="field"
+          value={isMedicineCategory(draft.category) ? draft.category : ''}
+          onChange={(event) => update('category', event.target.value)}
+        >
+          <option value="" disabled>
+            Choose a category
+          </option>
+          {medicineCategories.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="Formulation">
         <FilteredInput
@@ -593,7 +603,7 @@ function ProductFields({
           }
         />
       </Field>
-      <p className="flex items-center gap-1 self-end text-xs leading-5 text-slate-500">
+      <p className="flex items-center gap-1 self-end text-xs leading-5 text-slate-600">
         Stock is counted in pieces.
         <InfoTip label="Stock units">
           Box sizes come from each supplier&apos;s price list and are recorded per batch when stock
@@ -646,12 +656,10 @@ function Metric({
   hint?: string
 }): ReactElement {
   return (
-    <div className="panel relative overflow-hidden p-5 sm:p-6">
-      <div className="relative">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-      </div>
+    <div className="stat-tile">
+      <p className="stat-tile-label font-semibold">{label}</p>
+      <p className="stat-tile-value">{value}</p>
+      {hint && <p className="mt-1 text-xs text-slate-600">{hint}</p>}
     </div>
   )
 }
@@ -660,7 +668,7 @@ function Header({ title, description }: { title: string; description: string }):
   return (
     <header className="border-b border-slate-200 px-5 py-5 sm:px-6">
       <h3 className="section-title text-lg">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <p className="mt-1 text-sm text-slate-600">{description}</p>
     </header>
   )
 }

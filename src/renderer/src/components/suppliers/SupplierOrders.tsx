@@ -28,6 +28,7 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import { useSupplierOrders } from '@renderer/hooks/useSupplierOrders'
 import { getPriceList } from '@renderer/services/controls'
 import type { SupplierPackRecord } from '@shared/controls'
+import { formatId, matchesId } from '@shared/identifiers'
 import { filterInput, type InputRule } from '@shared/inputRules'
 import { EXPIRY_WARNING_DAYS, getExpiryStatus, localDate } from '@shared/inventory'
 import type { Supplier } from '@shared/types'
@@ -223,7 +224,8 @@ export default function SupplierOrders({
     const normalized = query.trim().toLowerCase()
     return procurement.suppliers.filter((supplier) => {
       if (!normalized) return true
-      return `${supplier.organization} ${supplier.person} ${supplier.city} ${supplier.phone}`
+      if (matchesId(normalized, 'supplier', supplier.id)) return true
+      return `${formatId('supplier', supplier.id)} ${supplier.organization} ${supplier.person} ${supplier.city} ${supplier.phone}`
         .toLowerCase()
         .includes(normalized)
     })
@@ -642,7 +644,7 @@ function SupplierTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-sm">
-        <thead className="surface-header text-left text-slate-500">
+        <thead className="surface-header text-left text-slate-600">
           <tr>
             <th className="px-5 py-3">Supplier</th>
             <th className="px-5 py-3">Contact</th>
@@ -655,11 +657,14 @@ function SupplierTable({
             <tr key={supplier.id} className="hover:bg-brand-50/50 transition-colors">
               <td className="px-5 py-4">
                 <p className="font-semibold text-slate-900">{supplier.organization}</p>
-                <p className="text-xs text-slate-500">{supplier.person}</p>
+                <p className="text-xs text-slate-600">
+                  <span className="id-code mr-1.5">{formatId('supplier', supplier.id)}</span>
+                  {supplier.person}
+                </p>
               </td>
               <td className="px-5 py-4">
                 <p>{supplier.phone}</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600">
                   {supplier.email || supplier.telephone || 'No secondary contact'}
                 </p>
               </td>
@@ -678,12 +683,12 @@ function SupplierTable({
                   </button>
                   <button
                     type="button"
-                    className="icon-button text-rose-700"
+                    className="danger-button"
                     aria-label={`Remove ${supplier.organization}`}
                     title="Remove Supplier"
                     onClick={() => remove(supplier)}
                   >
-                    <FiTrash2 />
+                    <FiTrash2 aria-hidden="true" /> Remove
                   </button>
                 </div>
               </td>
@@ -737,7 +742,7 @@ function OrderTable({
           <col className="w-[33%]" />
           <col className="w-[16%]" />
         </colgroup>
-        <thead className="surface-header text-left text-slate-500">
+        <thead className="surface-header text-left text-slate-600">
           <tr>
             <th className="px-4 py-3">Order</th>
             <th className="px-4 py-3">Supplier</th>
@@ -756,16 +761,16 @@ function OrderTable({
                   <p className="font-semibold break-all text-slate-900" title={order.orderNumber}>
                     {order.orderNumber}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600">
                     Ordered {date.format(new Date(order.orderedAt))}
                   </p>
                   {order.expectedAt && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       Expected {date.format(new Date(order.expectedAt))}
                     </p>
                   )}
                   <p className="mt-1 text-xs font-semibold">{currency.format(order.totalAmount)}</p>
-                  <dl className="mt-2 space-y-0.5 text-xs text-slate-500">
+                  <dl className="mt-2 space-y-0.5 text-xs text-slate-600">
                     <div>
                       <dt className="inline">Created by </dt>
                       <dd className="inline text-slate-700">{order.createdByName}</dd>
@@ -813,7 +818,7 @@ function OrderTable({
                         >
                           {item.productName}
                         </span>
-                        <span className="block text-xs text-slate-500 tabular-nums">
+                        <span className="block text-xs text-slate-600 tabular-nums">
                           {units(item.quantity, item)} ordered
                           {item.unit === 'box' ? ` (×${item.piecesPerUnit} pcs)` : ''} ·{' '}
                           {item.receivedQuantity} received ·{' '}
@@ -834,7 +839,7 @@ function OrderTable({
                   </ul>
                   {order.notes && (
                     <p
-                      className="mt-2 line-clamp-2 text-xs break-words text-slate-500"
+                      className="mt-2 line-clamp-2 text-xs break-words text-slate-600"
                       title={order.notes}
                     >
                       Note: {order.notes}
@@ -931,7 +936,7 @@ function AwaitingDelivery({
             <div className="min-w-0">
               <p className="font-semibold break-all">{order.orderNumber}</p>
               <p className="truncate text-sm text-slate-600">{order.supplierName}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-600">
                 {order.items.filter((item) => remaining(item) > 0).length} line(s) still to receive
                 {order.expectedAt ? ` · expected ${date.format(new Date(order.expectedAt))}` : ''}
               </p>
@@ -950,7 +955,7 @@ function AwaitingDelivery({
         ))}
       </div>
       {!isLoading && orders.length === 0 && (
-        <p className="mt-3 rounded-md border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+        <p className="mt-3 rounded-md border border-dashed border-slate-300 p-4 text-sm text-slate-600">
           No submitted purchase orders are waiting for delivery.
         </p>
       )}
@@ -1356,7 +1361,7 @@ function OrderDialog({
             </p>
           )}
           {packs === null && supplierId > 0 && (
-            <p className="text-sm text-slate-500">Loading the price list…</p>
+            <p className="text-sm text-slate-600">Loading the price list…</p>
           )}
           {noPacks && (
             <div
@@ -1373,7 +1378,7 @@ function OrderDialog({
           )}
           {supplierId > 0 && available.length > 0 && (
             <>
-              <div className="hidden grid-cols-[minmax(0,1fr)_10rem_6rem_7rem_7rem_2.5rem] gap-2 px-2 pb-1 text-xs font-semibold text-slate-600 sm:grid">
+              <div className="hidden grid-cols-[minmax(0,1fr)_10rem_6rem_7rem_7rem_6.5rem] gap-2 px-2 pb-1 text-xs font-semibold text-slate-600 sm:grid">
                 <span>Product</span>
                 <span>Box Size</span>
                 <span>Boxes</span>
@@ -1399,7 +1404,7 @@ function OrderDialog({
                           {line.legacy}
                         </p>
                       )}
-                      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_6rem_7rem_7rem_2.5rem] sm:items-center">
+                      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_6rem_7rem_7rem_6.5rem] sm:items-center">
                         <select
                           className="field mt-0 truncate pr-8"
                           aria-label={`Product for line ${index + 1}`}
@@ -1458,7 +1463,7 @@ function OrderDialog({
                         </span>
                         <button
                           type="button"
-                          className="icon-button"
+                          className="secondary-button"
                           aria-label={`Remove line ${index + 1}`}
                           disabled={lines.length === 1}
                           onClick={() =>
@@ -1467,11 +1472,11 @@ function OrderDialog({
                             )
                           }
                         >
-                          <FiX />
+                          <FiX aria-hidden="true" /> Remove
                         </button>
                       </div>
                       {pack?.current && (
-                        <p className="mt-1 px-1 text-xs text-slate-500">
+                        <p className="mt-1 px-1 text-xs text-slate-600">
                           Price list: {currency.format(pack.current.unitCost)} per box of{' '}
                           {pack.piecesPerBox}, effective{' '}
                           {date.format(new Date(`${pack.current.effectiveFrom}T00:00:00`))}
@@ -1851,7 +1856,7 @@ function ReceiveDialog({
         </div>
         <div className="overflow-x-auto rounded-md border border-slate-200">
           <table className="w-full min-w-[1000px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs text-slate-500">
+            <thead className="bg-slate-50 text-left text-xs text-slate-600">
               <tr>
                 <th className="px-3 py-2">Product</th>
                 <th className="px-2 py-2 text-right">Ordered</th>
@@ -1898,10 +1903,10 @@ function ReceiveDialog({
                 const { perBox: piecesPerBox, cost, differs } = actual(item)
                 return (
                   <Fragment key={item.id}>
-                    <tr className={`border-t-0 ${active ? '' : 'bg-slate-50/70 text-slate-500'}`}>
+                    <tr className={`border-t-0 ${active ? '' : 'bg-slate-50/70 text-slate-600'}`}>
                       <td className="px-3 py-2 align-top">
                         <p className="font-medium text-slate-800">{item.productName}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-600">
                           Cost {currency.format(item.unitCost)} per {unitName(item)}
                           {item.unit === 'box' &&
                             ` (${currency.format(item.unitCost / item.piecesPerUnit)} per piece)`}
@@ -1916,7 +1921,7 @@ function ReceiveDialog({
                       <td className="px-2 py-2 text-right align-top font-semibold tabular-nums">
                         {units(remaining(item), item)}
                         {item.unit === 'box' && (
-                          <p className="text-xs font-normal text-slate-500">
+                          <p className="text-xs font-normal text-slate-600">
                             = {remaining(item) * item.piecesPerUnit} pcs
                           </p>
                         )}
@@ -2141,7 +2146,7 @@ function DeliveryCheck({
           value={line.piecesPerBox}
           onChange={(event) => update('piecesPerBox', event.target.value)}
         />
-        <span className="mt-0.5 block font-normal text-slate-500">
+        <span className="mt-0.5 block font-normal text-slate-600">
           Ordered: {item.piecesPerUnit}
         </span>
         {error('piecesPerBox')}
@@ -2158,7 +2163,7 @@ function DeliveryCheck({
           value={line.unitCost}
           onChange={(event) => update('unitCost', event.target.value)}
         />
-        <span className="mt-0.5 block font-normal text-slate-500">
+        <span className="mt-0.5 block font-normal text-slate-600">
           Ordered: {currency.format(item.unitCost)}
         </span>
         {error('unitCost')}
@@ -2233,7 +2238,7 @@ function Metric({
       </span>
       <div className="min-w-0">
         <p className="stat-tile-label">{label}</p>
-        <p className="stat-tile-value mt-0.5 text-2xl break-words">{value}</p>
+        <p className="stat-tile-value fit-figure mt-0.5 text-2xl">{value}</p>
       </div>
     </div>
   )

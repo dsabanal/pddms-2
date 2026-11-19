@@ -1,5 +1,8 @@
 import { noteAudit } from '@main/audit/repository'
 import { db } from '@main/db'
+import { priceOn } from '@main/price-list/repository'
+import { formatId } from '@shared/identifiers'
+import { localDate } from '@shared/inventory'
 import { purchaseOrderDeliverySchema } from '@shared/schemas'
 import type {
   Database,
@@ -8,8 +11,6 @@ import type {
   PurchaseOrderStatus,
   PurchaseOrderWithDetails
 } from '@shared/types'
-import { priceOn } from '@main/price-list/repository'
-import { localDate } from '@shared/inventory'
 import { sql, type Transaction } from 'kysely'
 import { randomUUID } from 'node:crypto'
 
@@ -189,10 +190,8 @@ export async function insertOne(data: CreateOrderInput): Promise<PurchaseOrderWi
     // Note: Validates the packs and their prices before anything is written.
     const priced = await orderLines(transaction, 0, data.supplierId, data.items)
 
-    const orderNumber = `PO-${new Date()
-      .toISOString()
-      .replace(/[-:TZ.]/g, '')
-      .slice(0, 14)}-${randomUUID().slice(0, 8).toUpperCase()}`
+    // Note: The number is made from the row id (PO-000123) and set right after the insert.
+    const orderNumber = `PENDING-${randomUUID()}`
     const totalAmount = lineTotal(priced)
     const order = await transaction
       .insertInto('purchaseOrders')
@@ -207,6 +206,11 @@ export async function insertOne(data: CreateOrderInput): Promise<PurchaseOrderWi
       })
       .returning('id')
       .executeTakeFirstOrThrow()
+    await transaction
+      .updateTable('purchaseOrders')
+      .set({ orderNumber: formatId('purchaseOrder', order.id) })
+      .where('id', '=', order.id)
+      .execute()
 
     await transaction
       .insertInto('purchaseOrderItems')
@@ -282,52 +286,52 @@ export async function updateStatusById(
   const changed = current.status !== status
   const now = new Date().toISOString()
   await db.transaction().execute(async (transaction) => {
-  if (changed && status === 'submitted') {
-    // Note: The order goes to the supplier at the agreed price in effect on the day it is sent.
-    const order = await transaction
-      .selectFrom('purchaseOrders')
-      .select('supplierId')
-      .where('id', '=', id)
-      .executeTakeFirstOrThrow()
-    const lines = await transaction
-      .selectFrom('purchaseOrderItems')
-      .select(['id', 'packId', 'quantity', 'unitCost'])
-      .where('purchaseOrderId', '=', id)
-      .execute()
-    if (lines.some((line) => line.packId === null))
-      throw new Error(
-        'This draft was made before the supplier price list. Edit it and pick each pack from the price list, then submit.'
-      )
-    const priced = await orderLines(
-      transaction,
-      id,
-      order.supplierId,
-      lines.map((line) => ({ packId: line.packId!, quantity: line.quantity }))
-    )
-    for (const [index, line] of lines.entries())
-      await transaction
-        .updateTable('purchaseOrderItems')
-        .set({ unitCost: priced[index].unitCost })
-        .where('id', '=', line.id)
+    if (changed && status === 'submitted') {
+      // Note: The order goes to the supplier at the agreed price in effect on the day it is sent.
+      const order = await transaction
+        .selectFrom('purchaseOrders')
+        .select('supplierId')
+        .where('id', '=', id)
+        .executeTakeFirstOrThrow()
+      const lines = await transaction
+        .selectFrom('purchaseOrderItems')
+        .select(['id', 'packId', 'quantity', 'unitCost'])
+        .where('purchaseOrderId', '=', id)
         .execute()
+      if (lines.some((line) => line.packId === null))
+        throw new Error(
+          'This draft was made before the supplier price list. Edit it and pick each pack from the price list, then submit.'
+        )
+      const priced = await orderLines(
+        transaction,
+        id,
+        order.supplierId,
+        lines.map((line) => ({ packId: line.packId!, quantity: line.quantity }))
+      )
+      for (const [index, line] of lines.entries())
+        await transaction
+          .updateTable('purchaseOrderItems')
+          .set({ unitCost: priced[index].unitCost })
+          .where('id', '=', line.id)
+          .execute()
+      await transaction
+        .updateTable('purchaseOrders')
+        .set({ totalAmount: lineTotal(priced) })
+        .where('id', '=', id)
+        .execute()
+    }
     await transaction
       .updateTable('purchaseOrders')
-      .set({ totalAmount: lineTotal(priced) })
+      .set({
+        status,
+        receivedAt: status === 'received' ? sql`CURRENT_TIMESTAMP` : null,
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+        ...(changed && status === 'submitted' ? { submittedBy: accountId, submittedAt: now } : {}),
+        ...(changed && status === 'cancelled' ? { cancelledBy: accountId, cancelledAt: now } : {})
+      })
       .where('id', '=', id)
-      .execute()
-  }
-  await transaction
-    .updateTable('purchaseOrders')
-    .set({
-      status,
-      receivedAt: status === 'received' ? sql`CURRENT_TIMESTAMP` : null,
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-      ...(changed && status === 'submitted' ? { submittedBy: accountId, submittedAt: now } : {}),
-      ...(changed && status === 'cancelled' ? { cancelledBy: accountId, cancelledAt: now } : {})
-    })
-    .where('id', '=', id)
-    .where('status', '=', current.status)
-    .executeTakeFirstOrThrow()
+      .where('status', '=', current.status)
+      .executeTakeFirstOrThrow()
   })
   // Note: The activity log shows the status before and after (L9).
   if (changed)

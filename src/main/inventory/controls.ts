@@ -3,13 +3,14 @@ import { db } from '@main/db'
 import {
   countLinesSchema,
   startCountSchema,
-  type StockCountDetails,
-  type StockCountRecord,
   type DrugRegister,
-  type RegisterEntry
+  type RegisterEntry,
+  type StockCountDetails,
+  type StockCountRecord
 } from '@shared/controls'
-import { dateBounds } from '@shared/reporting'
+import { batchLabel, formatId } from '@shared/identifiers'
 import { escapeHtml } from '@shared/receipt'
+import { dateBounds } from '@shared/reporting'
 import { sql } from 'kysely'
 import { csvCell } from './repository'
 
@@ -87,7 +88,7 @@ export async function getCount(id: number): Promise<StockCountDetails> {
     lines: lines.map((line) => ({
       batchId: line.batchId,
       productName: `${line.brandName} (${line.genericName}) ${line.formulation}`,
-      batchNumber: line.physicalTag ?? `Batch ${line.batchId}`,
+      batchNumber: batchLabel({ id: line.batchId, physicalTag: line.physicalTag }),
       expiresAt: String(line.expiresAt),
       piecesPerBox: line.piecesPerBox,
       expected: line.expected,
@@ -109,7 +110,9 @@ export async function startCount(input: unknown, accountId: number): Promise<num
       .where('status', '=', 'open')
       .executeTakeFirst()
     if (open)
-      throw new Error(`Stock count #${open.id} is still open. Complete or cancel it before starting another.`)
+      throw new Error(
+        `Stock count ${formatId('stockCount', open.id)} is still open. Complete or cancel it before starting another.`
+      )
     // Note: A one-product count lists all its batches, including ones the system shows as empty,
     // so stock found on the shelf can be added back. A full count lists every batch with stock.
     let query = transaction.selectFrom('batches').select(['id', 'currentStock'])
@@ -130,9 +133,13 @@ export async function startCount(input: unknown, accountId: number): Promise<num
       .executeTakeFirstOrThrow()
     await transaction
       .insertInto('stockCountLines')
-      .values(rows.map((row) => ({ countId: count.id, batchId: row.id, expected: row.currentStock })))
+      .values(
+        rows.map((row) => ({ countId: count.id, batchId: row.id, expected: row.currentStock }))
+      )
       .execute()
-    noteAudit({ summary: `Started stock count #${count.id} of ${rows.length} batch(es)` })
+    noteAudit({
+      summary: `Started stock count ${formatId('stockCount', count.id)} of ${rows.length} batch(es)`
+    })
     return count.id
   })
 }
@@ -229,7 +236,7 @@ export async function completeCount(id: number, accountId: number): Promise<numb
       .executeTakeFirstOrThrow()
   })
   noteAudit({
-    summary: `Completed stock count #${id}: ${count.lines.length} batch(es) counted, ${differences.length} adjusted`,
+    summary: `Completed stock count ${formatId('stockCount', id)}: ${count.lines.length} batch(es) counted, ${differences.length} adjusted`,
     changes: differences.map((line) => ({
       field: `${line.productName} batch ${line.batchNumber} (${line.reason})`,
       from: basis(line),
@@ -246,8 +253,11 @@ export async function cancelCount(id: number, accountId: number): Promise<void> 
     .where('id', '=', id)
     .where('status', '=', 'open')
     .executeTakeFirst()
-  if (Number(result.numUpdatedRows) !== 1) throw new Error('Only an open stock count can be cancelled.')
-  noteAudit({ summary: `Cancelled stock count #${id}; no stock was changed` })
+  if (Number(result.numUpdatedRows) !== 1)
+    throw new Error('Only an open stock count can be cancelled.')
+  noteAudit({
+    summary: `Cancelled stock count ${formatId('stockCount', id)}; no stock was changed`
+  })
 }
 
 const page = (title: string, body: string, landscape = false): string =>
@@ -270,8 +280,8 @@ export function countSheetHtml(count: StockCountDetails): string {
     )
     .join('')
   return page(
-    `Stock count #${count.id}`,
-    `<h1>Med Prix · Stock count sheet #${count.id}</h1>
+    `Stock count ${formatId('stockCount', count.id)}`,
+    `<h1>Med Prix · Stock count sheet ${formatId('stockCount', count.id)}</h1>
 <p class="meta">${escapeHtml(count.scope)} · Started ${escapeHtml(new Date(count.startedAt).toLocaleString('en-PH'))} by ${escapeHtml(count.startedByName)}. Count every piece on the shelf, including open boxes. Write differences' reasons in Notes.</p>
 <table><thead><tr><th>#</th><th>Product</th><th>Batch</th><th>Expiry</th><th>Box size</th><th>Expected (pcs)</th><th>Counted (pcs)</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
 <div class="sign"><span>Counted by / date</span><span>Checked by / date</span></div>`
@@ -292,7 +302,11 @@ const localDay = (iso: string): string => {
  * Built from the saved deliveries, sales, voids, wholesale deliveries, write-offs, supplier returns
  * and count adjustments, so it always agrees with them.
  */
-export async function drugRegister(drugId: number, from: string, to: string): Promise<DrugRegister> {
+export async function drugRegister(
+  drugId: number,
+  from: string,
+  to: string
+): Promise<DrugRegister> {
   const drug = await db.selectFrom('drugs').selectAll().where('id', '=', drugId).executeTakeFirst()
   if (!drug) throw new Error('Product not found.')
   const received = await sql<{
@@ -305,7 +319,7 @@ export async function drugRegister(drugId: number, from: string, to: string): Pr
     orderNumber: string
     invoices: string | null
     deliveredBy: string | null
-  }>`SELECT d.delivered_at AS at, COALESCE(b.physical_tag, 'Batch ' || b.id) AS batch, i.quantity * i.pieces_per_unit AS pieces,
+  }>`SELECT d.delivered_at AS at, COALESCE(b.physical_tag, 'BAT-' || printf('%06d', b.id)) AS batch, i.quantity * i.pieces_per_unit AS pieces,
     s.organization AS supplier, s.street || ', ' || s.city || ', ' || s.province AS address, s.pdea_license AS license, po.order_number,
     (SELECT GROUP_CONCAT(invoice_number, ', ') FROM supplier_invoices WHERE purchase_order_id = po.id) AS invoices, d.delivered_by_name AS delivered_by
     FROM supplier_delivery_items i JOIN supplier_deliveries d ON d.id = i.delivery_id JOIN batches b ON b.id = i.batch_id
@@ -353,20 +367,34 @@ export async function drugRegister(drugId: number, from: string, to: string): Pr
     batch: string
     pieces: number
     reason: string
-  }>`SELECT o.created_at AS at, o.kind, COALESCE(b.physical_tag, 'Batch ' || b.id) AS batch, o.quantity AS pieces, o.reason
+  }>`SELECT o.created_at AS at, o.kind, COALESCE(b.physical_tag, 'BAT-' || printf('%06d', b.id)) AS batch, o.quantity AS pieces, o.reason
     FROM stock_outs o JOIN batches b ON b.id = o.batch_id WHERE b.drug_id = ${drugId} AND o.kind IN ('write_off', 'supplier_return')`.execute(
     db
   )
-  const adjusted = await sql<{ at: string; batch: string; change: number; reason: string; countId: number | null }>`
-    SELECT a.created_at AS at, COALESCE(b.physical_tag, 'Batch ' || b.id) AS batch, a.change, a.reason, a.count_id
-    FROM stock_adjustments a JOIN batches b ON b.id = a.batch_id WHERE b.drug_id = ${drugId}`.execute(db)
+  const adjusted = await sql<{
+    at: string
+    batch: string
+    change: number
+    reason: string
+    countId: number | null
+  }>`
+    SELECT a.created_at AS at, COALESCE(b.physical_tag, 'BAT-' || printf('%06d', b.id)) AS batch, a.change, a.reason, a.count_id
+    FROM stock_adjustments a JOIN batches b ON b.id = a.batch_id WHERE b.drug_id = ${drugId}`.execute(
+    db
+  )
   const stock = await db
     .selectFrom('batches')
     .select((eb) => eb.fn.sum<number>('currentStock').as('pieces'))
     .where('drugId', '=', drugId)
     .executeTakeFirstOrThrow()
 
-  const blank = { supplier: null, patient: null, prescriptionNumber: null, s2License: null, practitioner: null }
+  const blank = {
+    supplier: null,
+    patient: null,
+    prescriptionNumber: null,
+    s2License: null,
+    practitioner: null
+  }
   const all: Omit<RegisterEntry, 'balance'>[] = [
     ...received.rows.map((row) => ({
       ...blank,
@@ -387,11 +415,15 @@ export async function drugRegister(drugId: number, from: string, to: string): Pr
         batchNumber: row.batch,
         quantityIn: 0,
         quantityOut: Number(row.pieces),
-        patient: [row.patient, row.age !== null ? `${row.age} yrs` : null, row.address].filter(Boolean).join(', '),
+        patient: [row.patient, row.age !== null ? `${row.age} yrs` : null, row.address]
+          .filter(Boolean)
+          .join(', '),
         prescriptionNumber: row.rx,
         s2License: row.s2,
         practitioner: row.doctor
-          ? [row.doctor, row.license ? `PRC ${row.license}` : null, row.doctorAddress].filter(Boolean).join(', ')
+          ? [row.doctor, row.license ? `PRC ${row.license}` : null, row.doctorAddress]
+              .filter(Boolean)
+              .join(', ')
           : null,
         reference: row.reference,
         remarks: `Dispensed by ${row.cashier}`
@@ -443,7 +475,9 @@ export async function drugRegister(drugId: number, from: string, to: string): Pr
       batchNumber: row.batch,
       quantityIn: Math.max(0, row.change),
       quantityOut: Math.max(0, -row.change),
-      reference: row.countId ? `Stock count #${row.countId}` : 'Stock adjustment',
+      reference: row.countId
+        ? `Stock count ${formatId('stockCount', row.countId)}`
+        : 'Stock adjustment',
       remarks: row.reason
     }))
   ].sort((a, b) => a.at.localeCompare(b.at))
@@ -484,7 +518,9 @@ const kindLabel: Record<RegisterEntry['kind'], string> = {
 
 export function registerHtml(register: DrugRegister, preparedBy: string): string {
   const cell = (value: string | number | null | undefined): string =>
-    value === null || value === undefined || value === '' || value === 0 ? '' : escapeHtml(String(value))
+    value === null || value === undefined || value === '' || value === 0
+      ? ''
+      : escapeHtml(String(value))
   const rows = register.entries
     .map((entry) => {
       const date = localDay(entry.at)

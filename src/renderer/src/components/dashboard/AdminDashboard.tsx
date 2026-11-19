@@ -49,7 +49,7 @@ function DashboardError({
           <FiAlertCircle className="size-5" aria-hidden="true" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-slate-950">Dashboard Unavailable</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">{message}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{message}</p>
         <button
           type="button"
           onClick={retry}

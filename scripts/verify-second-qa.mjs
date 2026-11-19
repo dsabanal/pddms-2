@@ -147,7 +147,7 @@ if (!process.env.SECOND_QA_TEST_PHASE) {
         brandName,
         genericName: 'Generic',
         formulation: '500 mg Tablet',
-        category: 'Medicine',
+        category: 'Others',
         isPrescribed: false,
         isControlled: false,
         reorderLevel: 5,

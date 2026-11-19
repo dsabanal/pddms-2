@@ -1,4 +1,5 @@
 import z from 'zod'
+import { medicineCategories } from './categories'
 import { roles } from './constants'
 import { localDate, yearsFromToday } from './inventory'
 import type {
@@ -211,7 +212,10 @@ const customerFields = {
   tin: z
     .string()
     .trim()
-    .regex(/^(\d{3}-?\d{3}-?\d{3}(-?\d{3,5})?)?$/, 'Enter the TIN as 9 to 14 digits, e.g. 123-456-789-000.')
+    .regex(
+      /^(\d{3}-?\d{3}-?\d{3}(-?\d{3,5})?)?$/,
+      'Enter the TIN as 9 to 14 digits, e.g. 123-456-789-000.'
+    )
     .transform((value) => value || null)
     .nullable()
     .default(null)
@@ -276,7 +280,8 @@ const customerSchema = z.strictObject(customerFields).superRefine((value, contex
     context.addIssue({
       code: 'custom',
       path: ['discountExpiresAt'],
-      message: 'Check the expiry date: it is more than 10 years away. Enter the date printed on the ID.'
+      message:
+        'Check the expiry date: it is more than 10 years away. Enter the date printed on the ID.'
     })
   }
   if (value.discountExpiresAt && value.discountExpiresAt < localDate()) {
@@ -292,7 +297,7 @@ export const newCustomerSchema = customerSchema satisfies z.ZodType<NewCustomer>
 export const customerUpdateSchema = customerSchema satisfies z.ZodType<CustomerUpdate>
 
 export const newDrugSchema = z.strictObject({
-  category: z.string().trim().min(1).max(NAME_MAX).regex(catalogTextPattern),
+  category: z.enum(medicineCategories),
   genericName: z.string().trim().min(1).max(NAME_MAX).regex(catalogTextPattern),
   brandName: z.string().trim().min(1).max(NAME_MAX).regex(catalogTextPattern),
   formulation: z.string().trim().min(1).max(NAME_MAX).regex(catalogTextPattern),
@@ -348,7 +353,10 @@ const supplierFields = {
     .string()
     .trim()
     .max(60)
-    .regex(/^([A-Za-z0-9][A-Za-z0-9 ./#_()-]*)?$/, 'License number may use letters, numbers and - / . # _ ( ).')
+    .regex(
+      /^([A-Za-z0-9][A-Za-z0-9 ./#_()-]*)?$/,
+      'License number may use letters, numbers and - / . # _ ( ).'
+    )
     .transform((value) => value || null)
     .nullable()
     .default(null)
@@ -370,7 +378,10 @@ export const purchaseOrderStatusSchema = z.enum([
 // box and box size come from the price list in the main process; whoever places the order cannot
 // type them.
 const purchaseOrderLineSchema = z.strictObject({
-  packId: z.number({ error: 'Select a pack from the price list.' }).int().positive('Select a pack from the price list.'),
+  packId: z
+    .number({ error: 'Select a pack from the price list.' })
+    .int()
+    .positive('Select a pack from the price list.'),
   quantity: z.number().int().positive().max(MAX_LINE_QUANTITY)
 })
 
@@ -453,7 +464,12 @@ export const purchaseOrderDeliverySchema = z
             .nullable()
             .default(null),
           differenceReason: z.string().trim().max(300).default(''),
-          batchNumber: z.string().trim().max(80).regex(/^([A-Za-z0-9][A-Za-z0-9 ./#_()-]*)?$/).default(''),
+          batchNumber: z
+            .string()
+            .trim()
+            .max(80)
+            .regex(/^([A-Za-z0-9][A-Za-z0-9 ./#_()-]*)?$/)
+            .default(''),
           sellPrice: currencyAmount
             .refine((value) => value >= 0.01, 'Selling price must be at least ₱0.01.')
             .nullable()
@@ -530,5 +546,6 @@ export const supplierPaymentSchema = z
   })
   .refine((value) => !referenceRequired(value.method) || !!value.referenceNumber?.trim(), {
     path: ['referenceNumber'],
-    message: 'Enter the reference number for this payment method (transaction, transfer or check number).'
+    message:
+      'Enter the reference number for this payment method (transaction, transfer or check number).'
   })

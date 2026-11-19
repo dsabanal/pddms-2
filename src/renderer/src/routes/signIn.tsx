@@ -87,7 +87,7 @@ function RouteComponent(): ReactElement {
           {isSubmitting ? 'Signing In…' : 'Sign In'}
         </button>
       </Form>
-      <p className="mt-6 text-center text-xs leading-5 text-slate-500">
+      <p className="mt-6 text-center text-xs leading-5 text-slate-600">
         Having trouble signing in? Contact the master account holder.
       </p>
     </CenteredPage>

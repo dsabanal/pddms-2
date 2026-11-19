@@ -99,7 +99,7 @@ export default function ArchivedRecords(): ReactElement {
         </p>
       )}
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">Nothing is archived.</p>
+        <p className="text-sm text-slate-600">Nothing is archived.</p>
       ) : (
         <div
           className="overflow-x-auto rounded-lg border border-slate-200"

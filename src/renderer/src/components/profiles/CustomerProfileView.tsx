@@ -15,6 +15,7 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import { mergeCustomers, RequestError } from '@renderer/services/controls'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { customerDetail, type DuplicateMatch } from '@shared/controls'
+import { customerId } from '@shared/identifiers'
 import { localDate } from '@shared/inventory'
 import { newCustomerSchema } from '@shared/schemas'
 import { validationIssues } from '@shared/validation'
@@ -239,8 +240,11 @@ export default function CustomerProfileView({
         {editing ? (
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <form noValidate onSubmit={save} className="panel space-y-6 p-6 sm:p-7">
-              <div>
-                <p className="eyebrow">{pharmacy ? 'Pharmacy Client' : 'Customer Details'}</p>
+              <div className="hero-band -mx-6 -mt-6 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
+                <p className="eyebrow">
+                  {pharmacy ? 'Pharmacy Client' : 'Customer Details'}
+                  {!isNew && customer && ` · ${customerId(customer)}`}
+                </p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <h2 className="section-title text-2xl">
                     {isNew
@@ -480,27 +484,27 @@ export default function CustomerProfileView({
             </form>
 
             <aside className="grid content-start gap-5 sm:grid-cols-2 xl:grid-cols-1">
-              <section className="glass-surface relative overflow-hidden rounded-lg p-6">
-                <div className="relative">
-                  <div className="text-brand-700 grid size-11 place-items-center rounded-lg border border-slate-200 bg-white shadow-sm">
+              <section className="stat-tile p-6">
+                <div>
+                  <div className="bg-brand-50 text-brand-700 grid size-12 place-items-center rounded-xl text-lg">
                     <FiUser />
                   </div>
-                  <p className="card-title mt-5">Profile Setup</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                  <p className="card-title mt-4">Profile Setup</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
                     {pharmacy
                       ? 'Record who to call about orders and where deliveries go. The address fills in new wholesale orders.'
                       : 'Capture the customer’s preferred contact details first, then record discount eligibility when applicable.'}
                   </p>
                 </div>
               </section>
-              <section className="panel p-6">
-                <div className="bg-brand-50/80 text-brand-700 grid size-11 place-items-center rounded-lg">
+              <section className="stat-tile p-6">
+                <div className="bg-brand-50 text-brand-700 grid size-12 place-items-center rounded-xl text-lg">
                   <FiShield />
                 </div>
-                <p className="card-title mt-5">
+                <p className="card-title mt-4">
                   {pharmacy ? 'Wholesale Pricing' : 'Eligibility Details'}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
+                <p className="mt-2 text-sm leading-6 text-slate-600">
                   {pharmacy
                     ? 'Pharmacy clients order by the box and never receive Senior Citizen or PWD discounts.'
                     : 'Senior Citizen and PWD profiles require a valid discount ID before checkout discounts can be applied.'}
@@ -510,9 +514,9 @@ export default function CustomerProfileView({
           </div>
         ) : (
           <div className="grid gap-5 xl:grid-cols-12">
-            <section className="panel relative overflow-hidden p-6 sm:p-7 xl:col-span-8">
+            <section className="hero-band xl:col-span-8">
               <div className="relative flex gap-4 sm:gap-5">
-                <div className="border-brand-100 bg-brand-50/85 text-brand-700 grid size-14 shrink-0 place-items-center rounded-lg border text-xl shadow-sm">
+                <div className="text-brand-100 grid size-14 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-xl">
                   <FiUser />
                 </div>
                 <div className="min-w-0">
@@ -521,12 +525,13 @@ export default function CustomerProfileView({
                     {date.format(new Date(draft.createdAt))}
                   </p>
                   <h1 className="page-title mt-2 truncate text-2xl">{draft.fullName}</h1>
+                  <p className="id-code id-code-on-dark mt-2">{customerId(draft)}</p>
                   {pharmacy && draft.contactPerson && (
-                    <p className="mt-1 text-sm font-medium text-slate-700">
+                    <p className="text-brand-100 mt-1 text-sm font-medium">
                       Contact: {draft.contactPerson}
                     </p>
                   )}
-                  <p className="mt-3 text-sm text-slate-600 sm:text-base">
+                  <p className="text-brand-50 mt-3 text-sm sm:text-base">
                     {draft.phone}
                     {draft.email ? ` · ${draft.email}` : ''}
                   </p>
@@ -607,7 +612,7 @@ export default function CustomerProfileView({
                 <header className="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                   <div>
                     <h3 className="section-title">Transaction History</h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-600">
                       Recorded purchases associated with this customer.
                     </p>
                   </div>
@@ -629,7 +634,7 @@ export default function CustomerProfileView({
                       {draft.transactions.map((transaction) => (
                         <tr
                           key={transaction.id}
-                          className={`transition hover:bg-white ${transaction.voided ? 'text-slate-500' : ''}`}
+                          className={`transition hover:bg-white ${transaction.voided ? 'text-slate-600' : ''}`}
                         >
                           <td className="px-5 py-4 font-medium sm:px-6">
                             {transaction.id}
@@ -639,7 +644,7 @@ export default function CustomerProfileView({
                               </span>
                             )}
                           </td>
-                          <td className="px-5 py-4 text-slate-500">
+                          <td className="px-5 py-4 text-slate-600">
                             {date.format(new Date(transaction.purchasedAt))}
                           </td>
                           <td className="px-5 py-4">{transaction.itemCount}</td>
@@ -651,7 +656,7 @@ export default function CustomerProfileView({
                     </tbody>
                   </table>
                   {draft.transactions.length === 0 && (
-                    <p className="p-12 text-center text-sm text-slate-500">
+                    <p className="p-12 text-center text-sm text-slate-600">
                       No transactions recorded.
                     </p>
                   )}
@@ -693,15 +698,13 @@ function ProfileDetail({
   description: string
 }): ReactElement {
   return (
-    <section className="panel relative overflow-hidden p-5 sm:p-6 xl:col-span-4">
-      <div className="relative">
-        <div className="text-brand-700 grid size-10 place-items-center rounded-lg border border-slate-200 bg-white shadow-sm">
-          {icon}
-        </div>
-        <p className="mt-5 text-sm text-slate-500">{label}</p>
-        <p className="mt-2 text-lg font-semibold break-words text-slate-900">{value}</p>
-        <p className="mt-2 text-sm leading-6 break-words text-slate-500">{description}</p>
+    <section className="stat-tile xl:col-span-4">
+      <div className="bg-brand-50 text-brand-700 grid size-12 place-items-center rounded-xl text-lg">
+        {icon}
       </div>
+      <p className="stat-tile-label mt-4 font-semibold">{label}</p>
+      <p className="mt-1 text-lg font-bold break-words text-slate-950">{value}</p>
+      <p className="mt-1 text-sm leading-6 break-words text-slate-600">{description}</p>
     </section>
   )
 }

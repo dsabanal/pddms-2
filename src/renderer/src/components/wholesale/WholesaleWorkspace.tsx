@@ -22,6 +22,7 @@ import {
   wholesaleAlerts
 } from '@renderer/services/wholesale'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
+import { customerId, matchesId } from '@shared/identifiers'
 import { getExpiryStatus, isBatchSellable, localDate } from '@shared/inventory'
 import { calculateSale, money, priceToCents, type CartLine } from '@shared/sales'
 import { paymentMethodLabel, paymentMethods } from '@shared/schemas'
@@ -221,7 +222,7 @@ export default function WholesaleWorkspace(): ReactElement {
   return (
     <DashboardShell pageTitle="Wholesale & Deliveries">
       <div className="space-y-5">
-        <header className="page-intro flex flex-wrap items-end justify-between gap-3">
+        <header className="page-intro hero-band flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="eyebrow">Business</p>
             <div className="flex items-center gap-1.5">
@@ -392,7 +393,7 @@ export default function WholesaleWorkspace(): ReactElement {
                     </td>
                     <td className="px-3 py-3">
                       <StatusBadge status={order.status} />
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-600">
                         {order.scheduledDate ? showDate(order.scheduledDate) : 'No delivery date'}
                       </p>
                     </td>
@@ -405,7 +406,7 @@ export default function WholesaleWorkspace(): ReactElement {
                           {order.receivable ? (
                             <>
                               {money(order.receivable.paidCents)} paid
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-600">
                                 {money(order.receivable.remainingCents)} remaining
                               </p>
                             </>
@@ -446,7 +447,7 @@ export default function WholesaleWorkspace(): ReactElement {
             </table>
           </div>
           {!loading && !orders.length && (
-            <p className="text-sm text-slate-500">No wholesale orders match these filters.</p>
+            <p className="text-sm text-slate-600">No wholesale orders match these filters.</p>
           )}
           {more && (
             <button
@@ -814,7 +815,7 @@ function OrderForm({
               </select>
               {fields.error('customerId')}
               {clients.length > 0 && (
-                <span className="mt-1 block text-xs font-normal text-slate-500">
+                <span className="mt-1 block text-xs font-normal text-slate-600">
                   Not listed?{' '}
                   <Link
                     to="/wholesale/clients/$clientId"
@@ -925,7 +926,7 @@ function OrderForm({
               <div key={product.id} className="rounded-md bg-slate-50 p-2">
                 <p className="px-1 font-semibold text-slate-900">
                   {product.brandName}{' '}
-                  <span className="font-normal text-slate-500">
+                  <span className="font-normal text-slate-600">
                     {product.genericName} · {product.formulation}
                   </span>
                 </p>
@@ -962,7 +963,7 @@ function OrderForm({
                           className={
                             getExpiryStatus(batch.expiresAt) === 'near-expiry'
                               ? 'font-medium text-amber-700'
-                              : 'text-slate-500'
+                              : 'text-slate-600'
                           }
                         >
                           {available} full box{available === 1 ? '' : 'es'} available
@@ -997,7 +998,7 @@ function OrderForm({
               </div>
             ))}
             {!matches.length && (
-              <p className="p-3 text-sm text-slate-500">
+              <p className="p-3 text-sm text-slate-600">
                 {products.length
                   ? 'No products with available stock match this search.'
                   : 'No products in the catalog yet.'}
@@ -1023,7 +1024,7 @@ function OrderForm({
                   <span className="min-w-0 text-sm break-words">
                     <span className="font-semibold">{batch?.product.brandName}</span> · Batch{' '}
                     {batch?.batchNumber}
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-slate-600">
                       {quantityLabel(line.quantity, 'box', batch?.perBox ?? 1)} ×{' '}
                       {money(line.unitPriceCents)}
                     </span>
@@ -1033,17 +1034,17 @@ function OrderForm({
                   </span>
                   <button
                     type="button"
-                    className="icon-button size-9"
+                    className="secondary-button px-2.5 text-rose-700"
                     aria-label={`Remove ${batch?.product.brandName ?? 'line'}`}
                     onClick={() => setLines(lines.filter((item) => item.batchId !== line.batchId))}
                   >
-                    <FiTrash2 aria-hidden="true" />
+                    <FiTrash2 aria-hidden="true" /> Remove
                   </button>
                 </div>
               )
             })}
             {!lines.length && (
-              <p className="px-3 py-3 text-sm text-slate-500">No products added yet.</p>
+              <p className="px-3 py-3 text-sm text-slate-600">No products added yet.</p>
             )}
           </div>
           {fields.error('items')}
@@ -1227,7 +1228,7 @@ function OrderDetails({
                       </td>
                       <td className="px-3 py-2.5 tabular-nums">
                         {money(item.unitPriceCents)}
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-600">
                           per {unitWord(item.unit, item.piecesPerUnit)}
                         </p>
                       </td>
@@ -1647,7 +1648,7 @@ function OrderDetails({
                           <td className="px-3 py-2.5">
                             {item.recordedByName}
                             {item.updatedAt !== item.createdAt && (
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-600">
                                 Edited by {item.updatedByName}
                               </p>
                             )}
@@ -1679,7 +1680,7 @@ function OrderDetails({
                   </table>
                 </div>
                 {!order.payments?.length && (
-                  <p className="text-sm text-slate-500">No payments recorded.</p>
+                  <p className="text-sm text-slate-600">No payments recorded.</p>
                 )}
               </section>
             )}
@@ -1693,7 +1694,7 @@ function OrderDetails({
 function Fact({ label, children }: { label: string; children: ReactNode }): ReactElement {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{label}</p>
+      <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">{label}</p>
       <div className="mt-1 font-semibold text-slate-900">{children}</div>
     </div>
   )
@@ -1740,7 +1741,8 @@ function PharmacyClients({ clients }: { clients: CustomerProfile[] }): ReactElem
     return clients.filter(
       (client) =>
         !search ||
-        `${client.fullName} ${client.contactPerson} ${client.phone} ${client.address}`
+        matchesId(search, 'pharmacyClient', client.id) ||
+        `${customerId(client)} ${client.fullName} ${client.contactPerson} ${client.phone} ${client.address}`
           .toLowerCase()
           .includes(search)
     )
@@ -1777,7 +1779,7 @@ function PharmacyClients({ clients }: { clients: CustomerProfile[] }): ReactElem
               className="field pl-10"
               maxLength={100}
               value={query}
-              placeholder="Pharmacy name, contact person or phone"
+              placeholder="Pharmacy name, client ID (CLT-000012) or phone"
               onChange={(event) => setQuery(event.target.value)}
             />
           </span>
@@ -1793,7 +1795,8 @@ function PharmacyClients({ clients }: { clients: CustomerProfile[] }): ReactElem
           >
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-slate-900">{client.fullName}</p>
-              <p className="truncate text-sm text-slate-500">
+              <p className="id-code mt-0.5">{customerId(client)}</p>
+              <p className="truncate text-sm text-slate-600">
                 {[
                   client.contactPerson,
                   client.phone,
@@ -1811,7 +1814,7 @@ function PharmacyClients({ clients }: { clients: CustomerProfile[] }): ReactElem
           </Link>
         ))}
         {shown.length === 0 && (
-          <p className="bg-white p-6 text-center text-sm text-slate-500">
+          <p className="bg-white p-6 text-center text-sm text-slate-600">
             {clients.length
               ? 'No pharmacy clients match this search.'
               : 'No pharmacy clients yet. Add one before placing a wholesale order.'}

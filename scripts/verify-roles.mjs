@@ -49,7 +49,6 @@ if (!process.env.ROLES_TEST_PHASE) {
           ...process.env,
           ROLES_TEST_PHASE: '1',
           DATABASE: database,
-          DATABASE_BACKUP: join(directory, 'backup.db'),
           INVENTORY_TEST_USER_DATA: join(directory, 'user-data')
         }
       }

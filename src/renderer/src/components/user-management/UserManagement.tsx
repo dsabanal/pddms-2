@@ -14,6 +14,7 @@ import {
 } from '@renderer/data/userManagement'
 import { useUserManagement } from '@renderer/hooks/useUserManagement'
 import { RequestError } from '@renderer/services/controls'
+import { formatId, matchesId } from '@shared/identifiers'
 import { cloneElement, useId, useMemo, useState, type FormEvent, type ReactElement } from 'react'
 import { FiEdit2, FiPlus, FiSearch, FiShield, FiTrash2, FiUsers } from 'react-icons/fi'
 import AdministrationTools from './AdministrationTools'
@@ -41,14 +42,18 @@ export default function UserManagement(): ReactElement {
     return management.users.filter(
       (user) =>
         (role === 'all' || user.role === role) &&
-        (!search || `${user.fullName} ${user.username}`.toLowerCase().includes(search))
+        (!search ||
+          matchesId(search, 'account', user.id) ||
+          `${formatId('account', user.id)} ${user.fullName} ${user.username}`
+            .toLowerCase()
+            .includes(search))
     )
   }, [management.users, query, role])
 
   return (
     <DashboardShell pageTitle="User Management">
       <div className="space-y-5 lg:space-y-6">
-        <section className="page-intro">
+        <section className="page-intro hero-band">
           <div className="page-intro-content flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="eyebrow">Account & admin</p>
@@ -74,7 +79,7 @@ export default function UserManagement(): ReactElement {
             </div>
           </div>
         </section>
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-5 sm:grid-cols-3">
           <Metric label="Total Accounts" value={management.users.length} icon={<FiUsers />} />
           <Metric
             label="Active Accounts"
@@ -103,7 +108,7 @@ export default function UserManagement(): ReactElement {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search name or username"
+                placeholder="Search name, username or employee ID"
                 className="field mt-0 pl-10"
               />
             </label>
@@ -126,7 +131,7 @@ export default function UserManagement(): ReactElement {
             aria-label="Staff accounts table"
           >
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="surface-header text-left text-slate-500">
+              <thead className="surface-header text-left text-slate-600">
                 <tr>
                   <th className="px-5 py-3">User</th>
                   <th className="px-5 py-3">Role</th>
@@ -149,7 +154,8 @@ export default function UserManagement(): ReactElement {
                         {user.fullName}
                       </button>
                       <p className="text-xs text-slate-600">
-                        @{user.username}
+                        <span className="id-code mr-1.5">{formatId('account', user.id)}</span>@
+                        {user.username}
                         {user.email ? ` · ${user.email}` : ''}
                         {user.phone ? ` · ${user.phone}` : ''}
                       </p>
@@ -177,7 +183,7 @@ export default function UserManagement(): ReactElement {
                         </p>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-slate-500">
+                    <td className="px-5 py-4 text-slate-600">
                       {date.format(new Date(user.createdAt))}
                     </td>
                     <td className="px-5 py-4">
@@ -187,20 +193,20 @@ export default function UserManagement(): ReactElement {
                           onClick={() => {
                             setEditing(user)
                           }}
-                          className={'icon-button text-brand-700 disabled:opacity-40'}
+                          className={'secondary-button text-brand-700 disabled:opacity-40'}
                           aria-label={`Edit ${user.fullName}`}
                         >
-                          <FiEdit2 />
+                          <FiEdit2 aria-hidden="true" /> Edit
                         </button>
                         <button
                           disabled={user.role === 'master'}
                           onClick={() => {
                             setDeleteUser(user)
                           }}
-                          className={'icon-button text-rose-700 disabled:opacity-40'}
+                          className={'danger-button disabled:opacity-40'}
                           aria-label={`Delete ${user.fullName}`}
                         >
-                          <FiTrash2 />
+                          <FiTrash2 aria-hidden="true" /> Delete
                         </button>
                         <button
                           disabled={user.role === 'master'}
@@ -243,12 +249,12 @@ export default function UserManagement(): ReactElement {
               </tbody>
             </table>
             {!management.isLoading && filtered.length === 0 && (
-              <p className="p-10 text-center text-sm text-slate-500">
+              <p className="p-10 text-center text-sm text-slate-600">
                 No accounts match the filters.
               </p>
             )}
             {management.isLoading && (
-              <p className="p-10 text-center text-sm text-slate-500">Loading accounts…</p>
+              <p className="p-10 text-center text-sm text-slate-600">Loading accounts…</p>
             )}
           </div>
         </section>
@@ -654,6 +660,7 @@ function UserDetails({ user, close }: { user: ManagedUser; close: VoidFunction }
   return (
     <Dialog title={user.fullName} close={close}>
       <dl className="grid gap-4 sm:grid-cols-2">
+        <Detail label="Employee ID" value={formatId('account', user.id)} />
         <Detail label="Username" value={`@${user.username}`} />
         <Detail label="Email" value={user.email || 'Not recorded'} />
         <Detail label="Mobile Number" value={user.phone || 'Not recorded'} />
@@ -725,7 +732,7 @@ function Field({
           })}
         </span>
       </label>
-      {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {hint && !error && <p className="mt-1 text-xs text-slate-600">{hint}</p>}
       {error && (
         <p id={`${id}-error`} className="mt-1 text-xs font-medium text-rose-700">
           {error}
@@ -738,7 +745,7 @@ function Field({
 function Detail({ label, value }: { label: string; value: string }): ReactElement {
   return (
     <div className="rounded-lg border border-slate-200/80 bg-white p-3">
-      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">{label}</dt>
+      <dt className="text-xs font-medium tracking-wide text-slate-600 uppercase">{label}</dt>
       <dd className="mt-1 font-semibold break-words">{value}</dd>
     </div>
   )
@@ -754,14 +761,14 @@ function Metric({
   icon: ReactElement
 }): ReactElement {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{label}</p>
-        <span className="bg-brand-50 text-brand-700 grid size-10 place-items-center rounded-lg">
-          {icon}
-        </span>
+    <div className="stat-tile flex-row items-center gap-4">
+      <span className="bg-brand-50 text-brand-700 grid size-12 shrink-0 place-items-center rounded-xl text-lg">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="stat-tile-label font-semibold">{label}</p>
+        <p className="stat-tile-value mt-0.5 text-3xl">{value}</p>
       </div>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
     </div>
   )
 }
