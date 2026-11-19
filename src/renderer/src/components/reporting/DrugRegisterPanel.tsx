@@ -83,7 +83,7 @@ export default function DrugRegisterPanel(): ReactElement {
         </div>
       </div>
       {products.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-600">
           No product is marked as controlled. Mark dangerous drugs as controlled on the product page
           to keep their register.
         </p>
@@ -177,7 +177,7 @@ export default function DrugRegisterPanel(): ReactElement {
           )}
           <div className="max-h-[60vh] overflow-auto rounded-md border border-slate-200">
             <table className="w-full min-w-[1100px] text-sm">
-              <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs text-slate-500">
+              <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs text-slate-600">
                 <tr>
                   <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Entry</th>
@@ -204,7 +204,7 @@ export default function DrugRegisterPanel(): ReactElement {
                     <td className="px-3 py-2">
                       {kindLabel[entry.kind]}
                       {entry.remarks && (
-                        <span className="block text-xs text-slate-500">{entry.remarks}</span>
+                        <span className="block text-xs text-slate-600">{entry.remarks}</span>
                       )}
                     </td>
                     <td className="px-3 py-2">{entry.batchNumber}</td>
@@ -223,10 +223,10 @@ export default function DrugRegisterPanel(): ReactElement {
               </tbody>
             </table>
             {register.entries.length === 0 && (
-              <p className="p-5 text-sm text-slate-500">No movements in this period.</p>
+              <p className="p-5 text-sm text-slate-600">No movements in this period.</p>
             )}
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             Check the columns against the current PDEA register requirements before relying on this
             printout for an inspection.
           </p>
@@ -239,7 +239,7 @@ export default function DrugRegisterPanel(): ReactElement {
 function Figure({ label, value }: { label: string; value: number }): ReactElement {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-600">{label}</dt>
       <dd className="text-lg font-semibold tabular-nums">{value.toLocaleString()} pcs</dd>
     </div>
   )

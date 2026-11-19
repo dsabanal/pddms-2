@@ -147,21 +147,21 @@ The staff revealed several major challenges in the current workflow. The central
 | Add Item to Cart | User selects product & quantity | Cashier/User | Add product to transaction | Item added to cart | Shopping cart module |
 | Apply Discount | Eligible customer (senior/PWD) | Cashier/User | Apply discount automatically | Discount applied to item/total | Shopping cart module |
 | Calculate Total | Checkout initiated | Cashier/User | Compute total payment | Displays total with discounts | User interface |
-| Process Payment | Customer pays cash | Cashier/User | Complete transaction | Payment recorded | Transaction database |
+| Process Payment | Customer pays cash | Cashier/User | Complete transaction | Payment recorded | pddms.db: `sales`, `sale_items` |
 | Generate Receipt | Payment processed | System | Provide proof of purchase | Receipt generated | Customer, printer/email |
-| Record Transaction | Payment completed | System | Keep sales record | Transaction saved | Transaction history database |
+| Record Transaction | Payment completed | System | Keep sales record | Transaction saved | pddms.db: `sales`, `sale_items`, `stock_outs` |
 | View Transaction History | Request from admin/cashier | Admin/User | Audit/review past sales | Displays transaction list | User interface |
 
 ## **2\. Inventory & Expiry Management System**
 
 | Event | Trigger | Source | Use Case | Response | Destination |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| Add New Product | Admin adds product | Admin | Enter new inventory item | Product saved | Inventory database |
-| Update Product Details | Admin edits product | Admin | Correct/update info | Product info updated | Inventory database |
-| Record Stock-In | New delivery received | Supplier/Admin | Increase stock | Stock quantity and batch recorded | Inventory database |
-| Record Stock-Out | Sale or adjustment | System/Cashier | Decrease stock | Stock quantity updated | Inventory database |
+| Add New Product | Admin adds product | Admin | Enter new inventory item | Product saved | pddms.db: `drugs`, `batches` |
+| Update Product Details | Admin edits product | Admin | Correct/update info | Product info updated | pddms.db: `drugs`, `batches` |
+| Record Stock-In | New delivery received | Supplier/Admin | Increase stock | Stock quantity and batch recorded | pddms.db: `drugs`, `batches` |
+| Record Stock-Out | Sale or adjustment | System/Cashier | Decrease stock | Stock quantity updated | pddms.db: `drugs`, `batches` |
 | Track Product Quantity | Stock change occurs | System | Monitor inventory | Real-time quantity updated | Admin interface |
-| Track Batch Info | Admin enters batch info | Admin | Record batch details | Batch info saved | Inventory database |
+| Track Batch Info | Admin enters batch info | Admin | Record batch details | Batch info saved | pddms.db: `drugs`, `batches` |
 | Monitor Expiration | System scans inventory | System | Avoid expired products | Expiry alerts generated | Admin notifications |
 | Low-Stock Alert | Product below threshold | System | Prevent stockout | Alert displayed | Admin/User interface |
 | Expiry Alert | Product near expiry | System | Prevent selling expired items | Alert displayed | Admin/User interface |
@@ -171,11 +171,11 @@ The staff revealed several major challenges in the current workflow. The central
 
 | Event | Trigger | Source | Use Case | Response | Destination |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| Add Supplier | Admin adds supplier | Admin | Maintain supplier list | Supplier saved | Supplier database |
+| Add Supplier | Admin adds supplier | Admin | Maintain supplier list | Supplier saved | pddms.db: `suppliers` |
 | Create Purchase Order | Admin generates order | Admin | Order products | PO recorded & sent | Supplier, procurement system |
-| Record Supplier Delivery | Supplier delivers goods | Supplier | Update stock & record delivery | Inventory updated, delivery logged | Inventory & procurement DB |
+| Record Supplier Delivery | Supplier delivers goods | Supplier | Update stock & record delivery | Inventory updated, delivery logged | pddms.db: `supplier_deliveries`, `batches` |
 | Track Order History | Admin requests | Admin | Review past orders | Order list displayed | Admin interface |
-| Upload Supplier Invoice | Admin uploads invoice | Admin | Keep financial record | Invoice stored | Procurement & finance DB |
+| Upload Supplier Invoice | Admin uploads invoice | Admin | Keep financial record | Invoice stored | pddms.db: `supplier_invoices` (file in the invoices folder) |
 | Monitor Payment Deadlines | System checks due dates | System | Avoid late payment | Payment alert generated | Admin notifications |
 | Record Payment to Supplier | Payment completed | Admin | Track supplier payments | Payment logged | Supplier transaction history |
 | View Supplier Transaction History | Admin requests | Admin | Audit supplier activity | Transaction list displayed | Admin interface |
@@ -195,13 +195,13 @@ The staff revealed several major challenges in the current workflow. The central
 
 | Event | Trigger | Source | Use Case | Response | Destination |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| Create User Account | Admin adds user | Admin | Allow system access | User account created | User management DB |
+| Create User Account | Admin adds user | Admin | Allow system access | User account created | pddms.db: `accounts` |
 | Assign User Roles | Admin assigns role | Admin | Control access | Role applied | User account permissions |
-| Update User Profile | Admin/user edits profile | Admin/User | Keep user info current | Profile updated | User management DB |
-| Manage User Access Permissions | Admin modifies access | Admin | Control permissions | Permissions updated | User management DB |
+| Update User Profile | Admin/user edits profile | Admin/User | Keep user info current | Profile updated | pddms.db: `accounts` |
+| Manage User Access Permissions | Admin modifies access | Admin | Control permissions | Permissions updated | pddms.db: `accounts` |
 | View System Logs | Admin requests | Admin | Audit system activity | Logs displayed | Admin interface |
 | Backup Data | Scheduled/manual backup | System/Admin | Protect data | Backup created | Backup storage |
-| Restore Data | Admin restores backup | Admin | Recover system data | Data restored | System DB |
+| Restore Data | Admin restores backup | Admin | Recover system data | Data restored | pddms.db (the whole file is restored) |
 
 **USE CASE LIST**
 

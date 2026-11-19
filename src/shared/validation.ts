@@ -77,7 +77,7 @@ const formatMessages: Record<string, string> = {
   fullName: 'Full name may use only letters, spaces, periods, commas, apostrophes or hyphens.',
   person: 'Contact person may use only letters, spaces, periods, commas, apostrophes or hyphens.',
   postalCode: 'Postal code must be 4 digits, e.g. 8000.',
-  category: 'Category must start with a letter or number and avoid special symbols.',
+  category: 'Choose a category from the list.',
   genericName: 'Generic name must start with a letter or number and avoid special symbols.',
   brandName: 'Brand name must start with a letter or number and avoid special symbols.',
   formulation: 'Formulation must start with a letter or number and avoid special symbols.',

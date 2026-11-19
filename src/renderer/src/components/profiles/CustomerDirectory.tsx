@@ -3,6 +3,7 @@ import InfoTip from '@renderer/components/ui/InfoTip'
 import { useAccount } from '@renderer/hooks/useAccount'
 import { canAccessPath } from '@renderer/navigation/access'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
+import { customerId, matchesId } from '@shared/identifiers'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import {
@@ -35,7 +36,8 @@ export default function CustomerDirectory(): ReactElement {
     return customers.filter(
       (customer) =>
         !search ||
-        `${customer.fullName} ${customer.phone} ${customer.email} ${customer.discountId}`
+        matchesId(search, 'customer', customer.id) ||
+        `${customerId(customer)} ${customer.fullName} ${customer.phone} ${customer.email} ${customer.discountId}`
           .toLowerCase()
           .includes(search)
     )
@@ -101,7 +103,7 @@ export default function CustomerDirectory(): ReactElement {
             <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
                 <h3 className="section-title">Directory</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-600">
                   Search, then open a record to view its details.
                 </p>
               </div>
@@ -126,7 +128,7 @@ export default function CustomerDirectory(): ReactElement {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search name, phone, email, or discount ID"
+                  placeholder="Search name, customer ID (CUS-000012), phone or discount ID"
                   className="field mt-0 pl-10"
                 />
               </label>
@@ -145,7 +147,8 @@ export default function CustomerDirectory(): ReactElement {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-slate-900">{customer.fullName}</p>
-                    <p className="mt-1 truncate text-sm text-slate-500">
+                    <p className="id-code mt-1">{customerId(customer)}</p>
+                    <p className="mt-1 truncate text-sm text-slate-600">
                       {customer.phone}
                       {customer.email ? ` · ${customer.email}` : ''}
                     </p>
@@ -170,7 +173,7 @@ export default function CustomerDirectory(): ReactElement {
                   <p className="mt-4 font-medium text-slate-700">
                     {customers.length ? 'No customers match this search.' : 'No customers yet.'}
                   </p>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-600">
                     Try another name, contact detail, or discount ID.
                   </p>
                 </div>

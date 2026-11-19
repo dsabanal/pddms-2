@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, rm, readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -154,7 +154,7 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
         brandName,
         genericName: 'Generic',
         formulation: '500 mg Tablet',
-        category: 'Medicine',
+        category: 'Others',
         isPrescribed: false,
         isControlled: false,
         reorderLevel: 5,
@@ -180,12 +180,17 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
   as(staff)
   await bad(channels.priceList.createPack, null, newPack({ piecesPerBox: 50, unitCost: 400 }))
   as(admin)
-  const pack50 = (await ok(channels.priceList.createPack, newPack({ piecesPerBox: 50, unitCost: 400 })))
-    .data
+  const pack50 = (
+    await ok(channels.priceList.createPack, newPack({ piecesPerBox: 50, unitCost: 400 }))
+  ).data
   const pack100 = (
     await ok(channels.priceList.createPack, newPack({ piecesPerBox: 100, unitCost: 750 }))
   ).data
-  await bad(channels.priceList.createPack, /already|exists/i, newPack({ piecesPerBox: 50, unitCost: 1 }))
+  await bad(
+    channels.priceList.createPack,
+    /already|exists/i,
+    newPack({ piecesPerBox: 50, unitCost: 1 })
+  )
   const controlledPack = (
     await ok(
       channels.priceList.createPack,
@@ -371,7 +376,11 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
   })
   await bad(channels.customer.createOne, null, client({ address: null }))
   const rose = (await ok(channels.customer.createOne, client())).customer
-  await bad(channels.customer.createOne, /different branch/, client({ phone: '09171110001', tin: null }))
+  await bad(
+    channels.customer.createOne,
+    /different branch/,
+    client({ phone: '09171110001', tin: null })
+  )
   const shared = await bad(
     channels.customer.createOne,
     /already used by another pharmacy client/,
@@ -462,7 +471,11 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
     ...fields
   })
   const ana = (await ok(channels.customer.createOne, customer())).customer
-  await bad(channels.customer.createOne, /already belongs/, customer({ fullName: 'Ana Cruz', discountId: null, discountType: 'none' }))
+  await bad(
+    channels.customer.createOne,
+    /already belongs/,
+    customer({ fullName: 'Ana Cruz', discountId: null, discountType: 'none' })
+  )
   await bad(
     channels.customer.createOne,
     /already on Ana Santos/,
@@ -515,7 +528,11 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
   assert.match(customerEdit.details, /Purok 1/)
 
   // 8. Archive instead of delete when a record has history; true delete only when never used.
-  const blocked = await bad(channels.product.removeOneById, /Used in .*Archive it instead/, tablet.id)
+  const blocked = await bad(
+    channels.product.removeOneById,
+    /Used in .*Archive it instead/,
+    tablet.id
+  )
   assert.equal(blocked.archivable, true)
   const unused = await product('Never Used')
   await ok(channels.product.removeOneById, unused.id)
@@ -529,8 +546,9 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
       supplierId: supplier.id,
       items: [
         {
-          packId: (await ok(channels.priceList.getAll)).packs.find((pack) => pack.drugId === spare.id)
-            .id,
+          packId: (await ok(channels.priceList.getAll)).packs.find(
+            (pack) => pack.drugId === spare.id
+          ).id,
           quantity: 1
         }
       ]
@@ -577,8 +595,13 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
     approval: { username: 'fix-admin', password: 'WrongPassword1' }
   })
   assert.equal(
-    (await db.selectFrom('accounts').select('failedAttempts').where('id', '=', admin.id).executeTakeFirst())
-      .failedAttempts,
+    (
+      await db
+        .selectFrom('accounts')
+        .select('failedAttempts')
+        .where('id', '=', admin.id)
+        .executeTakeFirst()
+    ).failedAttempts,
     0
   )
   await bad(channels.sales.void, /incorrect/, {
@@ -653,11 +676,17 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
     reasonCode: 'damaged',
     reason: ''
   })
-  const register = (await ok(channels.inventory.register, { drugId: controlled.id, from: today, to: today }))
-    .register
+  const register = (
+    await ok(channels.inventory.register, { drugId: controlled.id, from: today, to: today })
+  ).register
   assert.equal(register.openingBalance, 0)
   assert.deepEqual(
-    register.entries.map((entry) => [entry.kind, entry.quantityIn, entry.quantityOut, entry.balance]),
+    register.entries.map((entry) => [
+      entry.kind,
+      entry.quantityIn,
+      entry.quantityOut,
+      entry.balance
+    ]),
     [
       ['received', 30, 0, 30],
       ['dispensed', 0, 4, 26],
@@ -673,7 +702,10 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
   assert.equal(register.closingBalance, 25)
   assert.equal(register.stockOnHand, 25)
   assert.equal(register.unexplained, 0)
-  dialog.showSaveDialog = async () => ({ canceled: false, filePath: process.env.INVENTORY_TEST_EXPORT })
+  dialog.showSaveDialog = async () => ({
+    canceled: false,
+    filePath: process.env.INVENTORY_TEST_EXPORT
+  })
   await ok(channels.inventory.exportRegister, { drugId: controlled.id, from: today, to: today })
   const csv = await readFile(process.env.INVENTORY_TEST_EXPORT, 'utf8')
   assert.match(csv, /S2-7788/)
@@ -702,7 +734,11 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
     reasonCode: 'expired',
     reason: ''
   })
-  await db.updateTable('batches').set({ expiresAt: addDays(-1) }).where('id', '=', batch50.id).execute()
+  await db
+    .updateTable('batches')
+    .set({ expiresAt: addDays(-1) })
+    .where('id', '=', batch50.id)
+    .execute()
   await ok(channels.inventory.recordStockOut, {
     batchId: batch50.id,
     quantity: 5,
@@ -782,7 +818,10 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
       })
     ).order.id
   })
-  await ok(channels.supplierReturn.applyCreditNote, { creditNoteId: laterId, purchaseOrderId: order.id })
+  await ok(channels.supplierReturn.applyCreditNote, {
+    creditNoteId: laterId,
+    purchaseOrderId: order.id
+  })
   assert.equal((await balances(db, [order.id])).get(order.id).outstanding, owed.outstanding - 100)
   // Returns are not losses.
   assert.equal(metric(await report('losses'), 'Loss: Near expiry'), undefined)
@@ -862,9 +901,10 @@ if (!process.env.FIX_LIST_TEST_PHASE) {
       .select((eb) => eb.fn.coalesce(eb.fn.sum('change'), eb.lit(0)).as('total'))
       .where('batchId', '=', batch.id)
       .executeTakeFirstOrThrow()
-    const voidedPieces = await sql`SELECT COALESCE(SUM(i.quantity * i.pieces_per_unit), 0) AS total FROM sale_items i JOIN sales s ON s.id = i.sale_id WHERE s.status = 'voided' AND i.batch_id = ${batch.id}`.execute(
-      db
-    )
+    const voidedPieces =
+      await sql`SELECT COALESCE(SUM(i.quantity * i.pieces_per_unit), 0) AS total FROM sale_items i JOIN sales s ON s.id = i.sale_id WHERE s.status = 'voided' AND i.batch_id = ${batch.id}`.execute(
+        db
+      )
     assert.equal(
       batch.currentStock,
       batch.initialStock -

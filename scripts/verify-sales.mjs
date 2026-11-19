@@ -142,7 +142,7 @@ if (!process.env.SALES_TEST_PHASE) {
               brandName,
               genericName: 'Generic',
               formulation: '500 mg tablet',
-              category: 'Medicine',
+              category: 'Others',
               isPrescribed: false,
               isControlled: false,
               reorderLevel: 5
@@ -436,11 +436,21 @@ if (!process.env.SALES_TEST_PHASE) {
       await bad(channels.sales.checkout, { ...wallet, requestId: randomUUID() })
       const walletText = receiptText(walletSale)
       for (const text of ['GCash', 'GC 1234 5678', 'VATable Sales', 'VAT Amount (12%)'])
-        assert.ok(walletText.toUpperCase().includes(text.toUpperCase()), `e-wallet receipt shows ${text}`)
+        assert.ok(
+          walletText.toUpperCase().includes(text.toUpperCase()),
+          `e-wallet receipt shows ${text}`
+        )
       const seniorText = receiptText(sale)
       for (const text of ['VAT-Exempt Sales', 'signature'])
-        assert.ok(seniorText.toUpperCase().includes(text.toUpperCase()), `discount receipt shows ${text}`)
-      await db.updateTable('drugs').set({ isPrescribed: 1 }).where('id', '=', products[1].id).execute()
+        assert.ok(
+          seniorText.toUpperCase().includes(text.toUpperCase()),
+          `discount receipt shows ${text}`
+        )
+      await db
+        .updateTable('drugs')
+        .set({ isPrescribed: 1 })
+        .where('id', '=', products[1].id)
+        .execute()
       const rx = {
         requestId: randomUUID(),
         customerId: regular.id,
@@ -459,7 +469,11 @@ if (!process.env.SALES_TEST_PHASE) {
       const rxSale = (await ok(channels.sales.checkout, { ...rx, prescription: doctor })).sale
       assert.equal(rxSale.prescriberName, 'Dr. Ana Cruz')
       assert.equal(rxSale.prescriberLicense, 'PRC-0123456')
-      await db.updateTable('drugs').set({ isControlled: 1 }).where('id', '=', products[1].id).execute()
+      await db
+        .updateTable('drugs')
+        .set({ isControlled: 1 })
+        .where('id', '=', products[1].id)
+        .execute()
       const controlled = { ...rx, requestId: randomUUID(), prescription: doctor }
       await bad(channels.sales.checkout, controlled)
       const controlledSale = (
@@ -482,7 +496,11 @@ if (!process.env.SALES_TEST_PHASE) {
         .where('id', '=', products[1].id)
         .execute()
       // Note: Box size belongs to the batch (as delivered), not to the product.
-      await db.updateTable('batches').set({ piecesPerBox: 10 }).where('id', '=', beta.batchId).execute()
+      await db
+        .updateTable('batches')
+        .set({ piecesPerBox: 10 })
+        .where('id', '=', beta.batchId)
+        .execute()
       const stockBefore = (
         await db
           .selectFrom('batches')
@@ -520,7 +538,11 @@ if (!process.env.SALES_TEST_PHASE) {
         expectedTotalCents: 112000 + (stockBefore - 20) * 11200,
         cashCents: 112000 + (stockBefore - 20) * 11200
       })
-      await db.updateTable('batches').set({ piecesPerBox: 1 }).where('id', '=', beta.batchId).execute()
+      await db
+        .updateTable('batches')
+        .set({ piecesPerBox: 1 })
+        .where('id', '=', beta.batchId)
+        .execute()
       const pharmacy = await db
         .insertInto('customers')
         .values({
@@ -535,7 +557,11 @@ if (!process.env.SALES_TEST_PHASE) {
         })
         .returningAll()
         .executeTakeFirstOrThrow()
-      await bad(channels.sales.checkout, { ...exact, requestId: randomUUID(), customerId: pharmacy.id })
+      await bad(channels.sales.checkout, {
+        ...exact,
+        requestId: randomUUID(),
+        customerId: pharmacy.id
+      })
       const { createElement } = await import('react')
       const { renderToStaticMarkup } = await import('react-dom/server')
       const { ReceiptSlip } = await import('../src/renderer/src/components/sales/Receipt.tsx')

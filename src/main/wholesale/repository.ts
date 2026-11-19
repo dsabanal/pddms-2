@@ -1,6 +1,7 @@
 import { db } from '@main/db'
 import { deductBatchStock } from '@main/inventory/repository'
 import { reservedPiecesFor } from '@main/wholesale/reservations'
+import { formatId } from '@shared/identifiers'
 import { isBatchSellable, localDate } from '@shared/inventory'
 import { calculateSale, priceToCents, type SaleLine } from '@shared/sales'
 import type { Database } from '@shared/types'
@@ -272,7 +273,8 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
       .values({
         requestId,
         requestFingerprint: fingerprint,
-        reference: `WHO-${randomUUID().toUpperCase()}`,
+        // Note: The number is made from the row id (WO-000123) and set right after the insert.
+        reference: `PENDING-${randomUUID()}`,
         customerId: customer.id,
         customerName: customer.fullName,
         customerPhone: customer.phone,
@@ -298,6 +300,11 @@ export async function createOrder(input: WholesaleDraft, accountId: number): Pro
       })
       .returning('id')
       .executeTakeFirstOrThrow()
+    await transaction
+      .updateTable('wholesaleOrders')
+      .set({ reference: formatId('wholesaleOrder', order.id) })
+      .where('id', '=', order.id)
+      .execute()
     await transaction
       .insertInto('wholesaleOrderItems')
       .values(items.map((item) => ({ ...item, orderId: order.id })))

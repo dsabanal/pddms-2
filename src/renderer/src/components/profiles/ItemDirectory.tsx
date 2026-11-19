@@ -4,6 +4,8 @@ import { getItemStock, getSellableStock, getStockStatus } from '@renderer/data/p
 import { useAccount } from '@renderer/hooks/useAccount'
 import { exportInventory } from '@renderer/services/inventory'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
+import { medicineCategories } from '@shared/categories'
+import { formatId } from '@shared/identifiers'
 import { getExpiryStatus } from '@shared/inventory'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
@@ -46,10 +48,16 @@ export default function ItemDirectory(): ReactElement {
 
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<StockFilter>('all')
+  const [category, setCategory] = useState('')
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) => matchesFilter(item, filter) && matchesSearch(item, query))
-  }, [items, query, filter])
+    return items.filter(
+      (item) =>
+        matchesFilter(item, filter) &&
+        matchesSearch(item, query) &&
+        (!category || item.category === category)
+    )
+  }, [items, query, filter, category])
 
   const inventoryMetrics = useMemo(() => {
     let availableUnits = 0
@@ -98,16 +106,17 @@ export default function ItemDirectory(): ReactElement {
                 </InfoTip>
               </div>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="icon-button"
+                className="secondary-button"
                 aria-label="Refresh inventory"
                 title="Refresh Inventory"
                 disabled={isLoading}
                 onClick={() => void loadItems(true)}
               >
                 <FiRefreshCw className={isLoading ? 'animate-spin' : ''} aria-hidden="true" />
+                Refresh
               </button>
               <button
                 type="button"
@@ -212,10 +221,23 @@ export default function ItemDirectory(): ReactElement {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search generic name, brand, category, or formulation"
+                  placeholder="Search name, medicine ID (MED-000012) or formulation"
                   className="field mt-0 pl-10"
                 />
               </label>
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                className="field mt-0 sm:w-56"
+                aria-label="Filter by category"
+              >
+                <option value="">All Categories</option>
+                {medicineCategories.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
               <select
                 value={filter}
                 onChange={(event) => setFilter(event.target.value as StockFilter)}
@@ -260,9 +282,10 @@ export default function ItemDirectory(): ReactElement {
                           {stockLabel(item)}
                         </span>
                       </div>
-                      <p className="mt-1 truncate text-sm text-slate-500">
-                        {item.genericName} · {item.formulation}
+                      <p className="mt-1 truncate text-sm text-slate-600">
+                        {item.genericName} · {item.formulation} · {item.category}
                       </p>
+                      <p className="id-code mt-1">{formatId('product', item.id)}</p>
                       {item.batches.some(
                         (batch) => batch.stock > 0 && getExpiryStatus(batch.expiresAt) === 'expired'
                       ) && (
@@ -280,7 +303,7 @@ export default function ItemDirectory(): ReactElement {
                       )}
                     </div>
                     <div className="hidden w-40 text-right md:block">
-                      <p className="text-xs text-slate-500">Next expiry</p>
+                      <p className="text-xs text-slate-600">Next expiry</p>
                       <p className="text-sm font-medium text-slate-800">
                         {nextExpiry ? expiryDate.format(new Date(nextExpiry)) : 'No stock on hand'}
                       </p>
@@ -291,8 +314,8 @@ export default function ItemDirectory(): ReactElement {
                       >
                         {stock} on hand
                       </p>
-                      <p className="text-xs text-slate-500">{getSellableStock(item)} sellable</p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">{getSellableStock(item)} sellable</p>
+                      <p className="mt-1 text-xs text-slate-600">
                         {item.batches.length} recorded batch
                         {item.batches.length === 1 ? '' : 'es'}
                       </p>
@@ -302,7 +325,7 @@ export default function ItemDirectory(): ReactElement {
                 )
               })}
               {isLoading && (
-                <p role="status" className="p-5 text-sm text-slate-500">
+                <p role="status" className="p-5 text-sm text-slate-600">
                   Loading current inventory…
                 </p>
               )}
@@ -314,7 +337,7 @@ export default function ItemDirectory(): ReactElement {
                   <p className="mt-4 font-medium text-slate-700">
                     {items.length === 0 ? 'No products yet.' : 'No medicines match this search.'}
                   </p>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-600">
                     {items.length === 0
                       ? 'Add a product to the catalog, then receive stock for it through a purchase order.'
                       : 'Try another name, or set the filter back to All products.'}

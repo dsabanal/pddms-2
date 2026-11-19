@@ -258,7 +258,7 @@ export default function AdministrationTools(): ReactElement {
                             ))}
                           </ul>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                          <span className="inline-flex items-center gap-1 text-xs text-slate-600">
                             <FiMinus aria-hidden="true" /> No Access
                           </span>
                         )}
@@ -341,7 +341,7 @@ export default function AdministrationTools(): ReactElement {
             Refresh Backup List
           </button>
         </div>
-        <p className="flex items-center gap-1 text-xs text-slate-500">
+        <p className="flex items-center gap-1 text-xs text-slate-600">
           Backups in the default folder and from this session.
           <InfoTip label="Backup list">
             The list shows the default local backup folder and backups created in this session.
@@ -362,12 +362,12 @@ export default function AdministrationTools(): ReactElement {
               <span className="font-semibold">{new Date(backup.createdAt).toLocaleString()}</span> ·{' '}
               {backup.invoiceCount} invoices
               <br />
-              <span className="text-slate-500">{backup.directory}</span>
+              <span className="text-slate-600">{backup.directory}</span>
             </p>
           ))}
         </div>
         {!backups.length && (
-          <p className="text-sm text-slate-500">No completed local backups found.</p>
+          <p className="text-sm text-slate-600">No completed local backups found.</p>
         )}
       </section>
       <ArchivedRecords />
@@ -484,7 +484,7 @@ export default function AdministrationTools(): ReactElement {
                   </td>
                   <td className="px-3 py-2.5">
                     {log.actorId === null ? (
-                      <span className="text-slate-500">Not signed in</span>
+                      <span className="text-slate-600">Not signed in</span>
                     ) : (
                       log.actorName
                     )}
@@ -504,7 +504,7 @@ export default function AdministrationTools(): ReactElement {
           </table>
         </div>
         {!busy && !logs.length && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             {filtersActive ? 'No activity matches these filters.' : 'No activity recorded yet.'}
           </p>
         )}

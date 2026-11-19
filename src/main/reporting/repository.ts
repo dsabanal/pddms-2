@@ -1,5 +1,6 @@
 import { db } from '@main/db'
 import { csvCell } from '@main/inventory/repository'
+import { batchLabel } from '@shared/identifiers'
 import { expiryLabels, getExpiryStatus, isBatchSellable, localDate } from '@shared/inventory'
 import {
   dateBounds,
@@ -264,7 +265,7 @@ function definition(filter: ReportFilter): Definition {
   if (filter.kind === 'losses')
     return {
       base: sql`SELECT o.id, o.created_at, o.quantity, o.reason_code, o.reason AS notes, d.id AS product_id,
-      d.brand_name || ' (' || d.generic_name || ') ' || d.formulation AS product, COALESCE(b.physical_tag, 'Batch ' || b.id) AS batch_number,
+      d.brand_name || ' (' || d.generic_name || ') ' || d.formulation AS product, COALESCE(b.physical_tag, 'BAT-' || printf('%06d', b.id)) AS batch_number,
       b.expires_at, ROUND(b.buy_price * 100) AS unit_cost_cents, ROUND(o.quantity * b.buy_price * 100) AS cost_cents, a.full_name AS recorded_by,
       CASE o.reason_code WHEN 'expired' THEN 'Expired' WHEN 'damaged' THEN 'Damaged or broken' WHEN 'lost' THEN 'Lost or missing' WHEN 'recalled' THEN 'Recalled' ELSE 'Other' END AS reason_label,
       d.brand_name || ' ' || d.generic_name || ' ' || COALESCE(b.physical_tag, '') || ' ' || o.reason AS search_text
@@ -296,7 +297,7 @@ function definition(filter: ReportFilter): Definition {
       // Note: A recount replaces the earlier count of that cashier and day (L2). Both stay listed,
       // labelled, and only the count in force goes into the net over / short.
       base: sql`SELECT *, CASE WHEN replaced_by IS NULL THEN difference_cents ELSE 0 END AS final_difference_cents,
-      CASE WHEN replaced_by IS NOT NULL THEN 'Replaced by recount #' || replaced_by
+      CASE WHEN replaced_by IS NOT NULL THEN 'Replaced by recount CC-' || printf('%06d', replaced_by)
         WHEN recount_of IS NOT NULL THEN 'Recount of #' || recount_of ELSE 'Final' END AS count_status
       FROM (SELECT id, business_date, created_at, cashier_name, opening_float_cents, cash_sales_count, cash_sales_cents, expected_cents, counted_cents, difference_cents,
       CASE WHEN difference_cents = 0 THEN 'Balanced' WHEN difference_cents > 0 THEN 'Over' ELSE 'Short' END AS result, notes, recount_of,
@@ -405,7 +406,9 @@ async function inventory(
             : quantity.sellable <= row.reorderLevel
               ? 'Low stock'
               : 'In stock',
-        batch: row.physicalTag ?? (row.batchId ? `Batch ${row.batchId}` : 'No batches'),
+        batch: row.batchId
+          ? batchLabel({ id: row.batchId, physicalTag: row.physicalTag })
+          : 'No batches',
         quantity: row.currentStock ?? 0,
         expiresAt: row.expiresAt ? String(row.expiresAt) : '',
         expiryStatus: row.batchId
@@ -571,7 +574,11 @@ export async function generateReport(
         transaction
       )
       for (const row of totals.rows)
-        metrics.push({ label: `Loss: ${row.reasonLabel}`, value: Number(row.total), format: 'money' })
+        metrics.push({
+          label: `Loss: ${row.reasonLabel}`,
+          value: Number(row.total),
+          format: 'money'
+        })
     }
     if (filter.kind === 'income') {
       const totals = await sql<{

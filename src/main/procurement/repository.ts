@@ -1,5 +1,5 @@
 import { db } from '@main/db'
-import { sql, type Kysely } from 'kysely'
+import { batchLabel } from '@shared/identifiers'
 import type {
   Database,
   PurchaseOrderPaymentSummary,
@@ -8,6 +8,7 @@ import type {
   SupplierInvoiceWithDetails,
   SupplierPaymentWithDetails
 } from '@shared/types'
+import { sql, type Kysely } from 'kysely'
 
 interface InvoiceFileInput {
   purchaseOrderId: number
@@ -76,7 +77,9 @@ export async function orderBalances(
   orderIds?: number[]
 ): Promise<Map<number, { delivered: number; credits: number; paid: number; outstanding: number }>> {
   const filter = (column: string): ReturnType<typeof sql> =>
-    orderIds ? sql`AND ${sql.ref(column)} IN (${sql.join(orderIds.length ? orderIds : [0])})` : sql``
+    orderIds
+      ? sql`AND ${sql.ref(column)} IN (${sql.join(orderIds.length ? orderIds : [0])})`
+      : sql``
   const rows = (
     await sql<{ id: number; delivered: number; credits: number; paid: number }>`SELECT po.id,
       COALESCE((SELECT SUM(i.quantity * i.unit_cost) FROM supplier_delivery_items i JOIN supplier_deliveries d ON d.id = i.delivery_id WHERE d.purchase_order_id = po.id), 0) AS delivered,
@@ -205,7 +208,7 @@ export async function findDeliveries(): Promise<SupplierDeliveryWithDetails[]> {
       .map((item) => ({
         id: item.id,
         productName: `${item.brandName} (${item.genericName})`,
-        batchNumber: item.physicalTag ?? `Batch ${item.batchId}`,
+        batchNumber: batchLabel({ id: item.batchId, physicalTag: item.physicalTag }),
         quantity: item.quantity,
         orderedQuantity: item.orderedQuantity,
         unit: item.unit,

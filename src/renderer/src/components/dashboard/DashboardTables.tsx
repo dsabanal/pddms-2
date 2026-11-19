@@ -63,7 +63,7 @@ function PanelHeader({
           <h3 id={headingId} className="font-semibold tracking-tight text-slate-950">
             {title}
           </h3>
-          <p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p>
+          <p className="mt-0.5 text-xs leading-5 text-slate-600">{description}</p>
         </div>
       </div>
       <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-white/70">
@@ -81,7 +81,7 @@ function EmptyTable({ colSpan, label }: { colSpan: number; label: string }): Rea
           <FiClock className="size-4" aria-hidden="true" />
         </div>
         <p className="mt-3 text-sm font-medium text-slate-700">{label}</p>
-        <p className="mt-1 text-xs text-slate-500">New records will appear here automatically.</p>
+        <p className="mt-1 text-xs text-slate-600">New records will appear here automatically.</p>
       </td>
     </tr>
   )
@@ -113,7 +113,7 @@ export function ExpiryWatchlist({ alerts }: { alerts: DashboardExpiryAlert[] }):
           aria-labelledby="expiry-watchlist-title"
           className="w-full min-w-[35rem] text-left text-sm"
         >
-          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-500 uppercase">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-600 uppercase">
             <tr>
               <th scope="col" className="px-5 py-3 font-semibold sm:px-6">
                 Product
@@ -141,7 +141,7 @@ export function ExpiryWatchlist({ alerts }: { alerts: DashboardExpiryAlert[] }):
                   <th scope="row" className="px-5 py-4 font-medium text-slate-800 sm:px-6">
                     {alert.productName}
                   </th>
-                  <td className="px-4 py-4 font-mono text-xs text-slate-500">
+                  <td className="px-4 py-4 font-mono text-xs text-slate-600">
                     {alert.batchNumber}
                   </td>
                   <td className="px-4 py-4 text-right font-medium text-slate-700 tabular-nums">
@@ -189,7 +189,7 @@ export function LowStockWatchlist({ alerts }: { alerts: DashboardLowStockAlert[]
           aria-labelledby="low-stock-watchlist-title"
           className="w-full min-w-[34rem] text-left text-sm"
         >
-          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-500 uppercase">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-600 uppercase">
             <tr>
               <th scope="col" className="px-5 py-3 font-semibold sm:px-6">
                 Product
@@ -271,7 +271,7 @@ export function RecentTransactions({
           aria-labelledby="recent-transactions-title"
           className={`w-full text-left text-sm ${showCashier ? 'min-w-[58rem]' : 'min-w-[46rem]'}`}
         >
-          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-500 uppercase">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-xs tracking-wide text-slate-600 uppercase">
             <tr>
               <th scope="col" className="px-5 py-3 font-semibold sm:px-6">
                 Receipt
@@ -314,7 +314,7 @@ export function RecentTransactions({
                       <p className="font-medium text-slate-700">
                         {dateFormatter.format(occurredAt)}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-600">
                         {timeFormatter.format(occurredAt)}
                       </p>
                     </td>

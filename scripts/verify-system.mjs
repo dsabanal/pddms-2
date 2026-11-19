@@ -284,7 +284,7 @@ if (!process.env.SYSTEM_TEST_PHASE) {
         await ok(channels.product.createOne, {
           brandName: 'System Product',
           genericName: 'Generic',
-          category: 'Medicine',
+          category: 'Others',
           formulation: 'Tablet',
           isPrescribed: false,
           isControlled: false,
@@ -294,7 +294,9 @@ if (!process.env.SYSTEM_TEST_PHASE) {
       const order = (
         await ok(channels.purchaseOrder.createOne, {
           supplierId: supplier.id,
-          items: await packLines(db, supplier.id, [{ drugId: product.id, quantity: 10, unitCost: 10.25 }])
+          items: await packLines(db, supplier.id, [
+            { drugId: product.id, quantity: 10, unitCost: 10.25 }
+          ])
         })
       ).order
       await ok(channels.purchaseOrder.updateStatusById, order.id, { status: 'submitted' })

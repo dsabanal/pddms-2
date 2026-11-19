@@ -177,12 +177,12 @@ export default function StockOutPanel({ item }: { item: ItemProfile }): ReactEle
                 {writeOffReasons[record.reasonCode ?? 'other']}
               </p>
               {record.reason && <p>{record.reason}</p>}
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {record.createdAt} · {record.recordedByName}
               </p>
             </li>
           ))}
-          {!records.length && <li className="text-slate-500">No write-offs recorded.</li>}
+          {!records.length && <li className="text-slate-600">No write-offs recorded.</li>}
         </ul>
       </details>
     </section>

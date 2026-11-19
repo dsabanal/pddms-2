@@ -10,6 +10,7 @@ import {
   type CashCountRecord,
   type Denomination
 } from '@shared/controls'
+import { formatId } from '@shared/identifiers'
 import { money } from '@shared/sales'
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react'
 
@@ -128,9 +129,9 @@ export default function CashCountDialog({ close }: { close: VoidFunction }): Rea
         )}
         {preview?.previousCountId != null && (
           <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            <strong>Recount.</strong> You already saved count #{preview.previousCountId} today. This
-            count replaces it in the report; the earlier one stays on record. Say why you are
-            counting again in Notes.
+            <strong>Recount.</strong> You already saved count{' '}
+            {formatId('cashCount', preview.previousCountId)} today. This count replaces it in the
+            report; the earlier one stays on record. Say why you are counting again in Notes.
           </p>
         )}
         <FormField
@@ -167,7 +168,7 @@ export default function CashCountDialog({ close }: { close: VoidFunction }): Rea
                     setPieces((current) => ({ ...current, [value]: event.target.value }))
                   }
                 />
-                <span className="mt-0.5 block font-normal text-slate-500 tabular-nums">
+                <span className="mt-0.5 block font-normal text-slate-600 tabular-nums">
                   {money(denominationCents(value) * (counts[value] || 0))}
                 </span>
               </label>
@@ -220,7 +221,7 @@ export default function CashCountDialog({ close }: { close: VoidFunction }): Rea
 function Stat({ label, value }: { label: string; value: string }): ReactElement {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
+      <dt className="text-xs text-slate-600">{label}</dt>
       <dd className="font-semibold text-slate-900 tabular-nums">{value}</dd>
     </div>
   )

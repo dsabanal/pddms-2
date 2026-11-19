@@ -14,6 +14,7 @@ import type {
 } from '@renderer/data/supplierOrders'
 import { deadlineLabels, deadlineTone, orderStatusLabels } from '@renderer/data/supplierOrders'
 import type { SupplierOrdersState } from '@renderer/hooks/useSupplierOrders'
+import { formatId } from '@shared/identifiers'
 import { localDate } from '@shared/inventory'
 import { paymentMethodLabel, paymentMethods, referenceRequired } from '@shared/schemas'
 import { useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react'
@@ -228,7 +229,7 @@ export default function ProcurementRecords({
                   <p className="truncate font-semibold" title={summary.supplierName}>
                     {summary.supplierName}
                   </p>
-                  <p className="text-xs text-slate-500">{summary.orderNumber}</p>
+                  <p className="text-xs text-slate-600">{summary.orderNumber}</p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -248,19 +249,19 @@ export default function ProcurementRecords({
               </div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
                 <div>
-                  <dt className="text-slate-500">Owed</dt>
+                  <dt className="text-slate-600">Owed</dt>
                   <dd className="mt-1 truncate font-semibold">
                     {currency.format(summary.totalAmount)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Paid</dt>
+                  <dt className="text-slate-600">Paid</dt>
                   <dd className="mt-1 truncate font-semibold">
                     {currency.format(summary.paidAmount)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Remaining</dt>
+                  <dt className="text-slate-600">Remaining</dt>
                   <dd className="mt-1 truncate font-semibold">
                     {currency.format(summary.outstandingAmount)}
                   </dd>
@@ -283,7 +284,7 @@ export default function ProcurementRecords({
             </article>
           ))}
           {!procurement.isLoading && procurement.paymentSummaries.length === 0 && (
-            <p className="text-sm text-slate-500 sm:col-span-2 xl:col-span-3">
+            <p className="text-sm text-slate-600 sm:col-span-2 xl:col-span-3">
               No balances yet. A balance appears here after products are received for a purchase
               order.
             </p>
@@ -308,7 +309,7 @@ export default function ProcurementRecords({
             <col className="hidden w-[15%] xl:table-column" />
             <col className="w-48" />
           </colgroup>
-          <thead className="bg-slate-50 text-left text-slate-500">
+          <thead className="bg-slate-50 text-left text-slate-600">
             <tr>
               <th className="px-3 py-3">Invoice</th>
               <th className="px-3 py-3">Supplier / Order</th>
@@ -328,12 +329,12 @@ export default function ProcurementRecords({
                   >
                     {invoice.invoiceNumber}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600">
                     Issued {date.format(new Date(invoice.invoiceDate))}
                   </p>
-                  <p className="text-xs text-slate-500">Uploaded by {invoice.uploadedByName}</p>
+                  <p className="text-xs text-slate-600">Uploaded by {invoice.uploadedByName}</p>
                   <p
-                    className="mt-1 truncate text-xs text-slate-500 xl:hidden"
+                    className="mt-1 truncate text-xs text-slate-600 xl:hidden"
                     title={invoice.originalFilename}
                   >
                     {invoice.originalFilename}
@@ -343,7 +344,7 @@ export default function ProcurementRecords({
                   <p className="truncate" title={invoice.supplierName}>
                     {invoice.supplierName}
                   </p>
-                  <p className="truncate text-xs text-slate-500" title={invoice.orderNumber}>
+                  <p className="truncate text-xs text-slate-600" title={invoice.orderNumber}>
                     {invoice.orderNumber}
                   </p>
                 </td>
@@ -359,7 +360,7 @@ export default function ProcurementRecords({
                   <p className="font-semibold break-words tabular-nums">
                     {currency.format(invoice.outstandingAmount)} due
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600">
                     {currency.format(invoice.paidAmount)} of {currency.format(invoice.amount)} paid
                   </p>
                 </td>
@@ -367,7 +368,7 @@ export default function ProcurementRecords({
                   <p className="truncate" title={invoice.originalFilename}>
                     {invoice.originalFilename}
                   </p>
-                  <p className="text-xs text-slate-500">{Math.ceil(invoice.fileSize / 1024)} KB</p>
+                  <p className="text-xs text-slate-600">{Math.ceil(invoice.fileSize / 1024)} KB</p>
                 </td>
                 <td className="px-3 py-4 align-top">
                   <div className="flex flex-col items-stretch gap-2">
@@ -435,7 +436,7 @@ export default function ProcurementRecords({
           </tbody>
         </table>
         {!procurement.isLoading && invoices.length === 0 && (
-          <p className="p-10 text-center text-sm text-slate-500">
+          <p className="p-10 text-center text-sm text-slate-600">
             {procurement.invoices.length === 0
               ? 'No supplier invoices yet. Use Add Supplier Invoice once the supplier sends one.'
               : 'No invoices match this search.'}
@@ -512,17 +513,17 @@ function ReceivingReports({
             <header className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="font-semibold break-all text-slate-900">
-                  Receiving report #{delivery.id} · {delivery.orderNumber}
+                  Receiving report {formatId('receiving', delivery.id)} · {delivery.orderNumber}
                 </p>
                 <p className="text-sm break-words text-slate-600">{delivery.supplierName}</p>
               </div>
               <div className="shrink-0 text-sm sm:text-right">
                 <p>{date.format(new Date(delivery.deliveredAt))}</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600">
                   Delivered by {delivery.deliveredByName ?? 'not recorded'} · Checked by{' '}
                   {delivery.checkedByName ?? 'not recorded'}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600">
                   Recorded by {delivery.recordedByName}
                   {order ? ` · ${orderStatusLabels[order.status]}` : ''}
                 </p>
@@ -540,7 +541,7 @@ function ReceivingReports({
                       <p className="truncate font-medium text-slate-900" title={item.productName}>
                         {item.productName}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         {item.orderedQuantity} {item.unit === 'box' ? 'box(es)' : 'pc(s)'} ordered ·{' '}
                         <span className="font-semibold text-slate-700">
                           {item.quantity} received
@@ -562,13 +563,13 @@ function ReceivingReports({
                       )}
                     </div>
                     <div className="min-w-0 text-sm">
-                      <p className="text-xs text-slate-500">Inventory batch</p>
+                      <p className="text-xs text-slate-600">Inventory batch</p>
                       <p className="truncate font-medium" title={item.batchNumber}>
                         {item.batchNumber}
                       </p>
                     </div>
                     <div className="text-sm">
-                      <p className="text-xs text-slate-500">Expiry</p>
+                      <p className="text-xs text-slate-600">Expiry</p>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium">{date.format(new Date(item.expiresAt))}</p>
                         {expired && (
@@ -603,7 +604,7 @@ function ReceivingReports({
         )
       })}
       {!procurement.isLoading && deliveries.length === 0 && (
-        <p className="py-10 text-center text-sm text-slate-500">
+        <p className="py-10 text-center text-sm text-slate-600">
           {procurement.deliveries.length === 0
             ? 'No deliveries recorded yet. Receive products against a submitted purchase order above.'
             : 'No receiving reports match this search and these filters.'}
@@ -702,7 +703,7 @@ function TransactionHistory({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[850px] text-sm">
-        <thead className="bg-slate-50 text-left text-slate-500">
+        <thead className="bg-slate-50 text-left text-slate-600">
           <tr>
             <th className="px-5 py-3">Transaction</th>
             <th className="px-5 py-3">Reference</th>
@@ -719,7 +720,7 @@ function TransactionHistory({
                   <span className="text-brand-600">{transaction.icon}</span>
                   {transaction.type}
                 </span>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-600">
                   {date.format(new Date(transaction.occurredAt))}
                 </p>
               </td>
@@ -727,7 +728,7 @@ function TransactionHistory({
               <td className="px-5 py-4">{transaction.supplier}</td>
               <td className="px-5 py-4 text-slate-600">
                 {transaction.details}
-                <p className="mt-1 text-xs text-slate-500">{transaction.handledBy}</p>
+                <p className="mt-1 text-xs text-slate-600">{transaction.handledBy}</p>
               </td>
               <td className="px-5 py-4 text-right font-semibold">
                 {transaction.amount === null ? '—' : currency.format(transaction.amount)}
@@ -737,7 +738,7 @@ function TransactionHistory({
         </tbody>
       </table>
       {!procurement.isLoading && transactions.length === 0 && (
-        <p className="p-10 text-center text-sm text-slate-500">
+        <p className="p-10 text-center text-sm text-slate-600">
           No supplier transactions match this search and these filters.
         </p>
       )}
@@ -1123,9 +1124,9 @@ function PaymentDialog({
             </select>
           </FormField>
           <div className="rounded-md border border-slate-200 p-3 text-sm">
-            <p className="text-slate-500">Delivered amount owed</p>
+            <p className="text-slate-600">Delivered amount owed</p>
             <p className="font-semibold">{currency.format(selectedSummary?.totalAmount ?? 0)}</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-600">
               Paid {currency.format(selectedSummary?.paidAmount ?? 0)} · Remaining{' '}
               {currency.format(selectedSummary?.outstandingAmount ?? 0)}
             </p>
@@ -1250,7 +1251,7 @@ function InvoiceMetric({
     <div className="flex items-center gap-3 rounded-md bg-slate-50 px-4 py-3">
       <span className={tone}>{icon}</span>
       <div>
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-xs text-slate-600">{label}</p>
         <p className="font-semibold">{value}</p>
       </div>
     </div>

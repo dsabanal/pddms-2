@@ -11,6 +11,7 @@ import {
   type SupplierReturnInput,
   type SupplierReturnRecord
 } from '@shared/controls'
+import { batchLabel } from '@shared/identifiers'
 import { supplierReturnReasons, type Database } from '@shared/types'
 import { sql, type Transaction } from 'kysely'
 
@@ -84,7 +85,7 @@ export async function findReturns(): Promise<{
     returns: returns.map(({ brandName, genericName, physicalTag, batchId, buyPrice, ...row }) => ({
       ...row,
       productName: `${brandName} (${genericName})`,
-      batchNumber: physicalTag ?? `Batch ${batchId}`,
+      batchNumber: batchLabel({ id: batchId, physicalTag }),
       costValue: Number((buyPrice * row.quantity).toFixed(2))
     })),
     creditNotes: notes.map((note) => ({
@@ -184,7 +185,8 @@ export async function recordCreditNote(input: CreditNoteInput, accountId: number
       // Note: CN-QA-1 and cn-qa-1 are the same credit note (L7).
       .where(sql<string>`lower(credit_note_number)`, '=', data.creditNoteNumber.toLowerCase())
       .executeTakeFirst()
-    if (duplicate) throw new Error(`Credit note ${data.creditNoteNumber} is already recorded for this supplier.`)
+    if (duplicate)
+      throw new Error(`Credit note ${data.creditNoteNumber} is already recorded for this supplier.`)
     const orderNumber = data.purchaseOrderId
       ? await checkOrderCredit(transaction, data.supplierId, data.purchaseOrderId, data.amount)
       : null
@@ -211,7 +213,9 @@ export async function recordCreditNote(input: CreditNoteInput, accountId: number
         .where('creditNoteId', 'is', null)
         .executeTakeFirst()
       if (Number(result.numUpdatedRows) !== data.returnIds.length)
-        throw new Error('A selected return belongs to another supplier or already has a credit note.')
+        throw new Error(
+          'A selected return belongs to another supplier or already has a credit note.'
+        )
     }
     noteAudit({
       summary: `Credit note ${data.creditNoteNumber} from ${supplier.organization}, ${peso(data.amount)}${orderNumber ? `, applied to ${orderNumber}` : ', kept for the next order'}`

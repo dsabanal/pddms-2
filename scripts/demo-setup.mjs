@@ -21,7 +21,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const handoff = (orderId) => ({
   orderId,
@@ -130,7 +130,6 @@ async function setup(target, userData) {
         env: {
           ...process.env,
           DATABASE: building,
-          DATABASE_BACKUP: join(directory, 'backup.db'),
           DEMO_SEED_PHASE: '1',
           INVENTORY_TEST_INVOICE: invoicePath,
           INVENTORY_TEST_USER_DATA: userData
@@ -261,7 +260,15 @@ async function seed() {
       ['cetirizine', 'Allerin', 'Cetirizine', '10 mg Tablet', 'Antihistamine', false, 20],
       ['losartan', 'Losardem', 'Losartan Potassium', '50 mg Tablet', 'Antihypertensive', true, 30],
       ['metformin', 'Glucodem', 'Metformin', '500 mg Tablet', 'Antidiabetic', true, 40],
-      ['ascorbic', 'Vitacee', 'Ascorbic Acid', '500 mg Tablet', 'Vitamin', false, 30],
+      [
+        'ascorbic',
+        'Vitacee',
+        'Ascorbic Acid',
+        '500 mg Tablet',
+        'Vitamins and Supplements',
+        false,
+        30
+      ],
       ['salbutamol', 'Breathex', 'Salbutamol', '2 mg/5 mL Syrup', 'Bronchodilator', true, 10],
       ['omeprazole', 'Gastrodem', 'Omeprazole', '20 mg Capsule', 'Antacid', false, 20]
     ])
@@ -282,7 +289,14 @@ async function seed() {
     // sales and per-batch box sizes show in the demo. Salbutamol syrup is sold by the bottle.
     const packs = {}
     for (const [supplierIndex, keys] of [
-      [0, [['paracetamol', 100, 120], ['cetirizine', 10, 25], ['ascorbic', 60, 90]]],
+      [
+        0,
+        [
+          ['paracetamol', 100, 120],
+          ['cetirizine', 10, 25],
+          ['ascorbic', 60, 90]
+        ]
+      ],
       [
         1,
         [
@@ -292,7 +306,13 @@ async function seed() {
           ['cetirizine', 20, 50]
         ]
       ],
-      [2, [['salbutamol', 1, 35], ['omeprazole', 20, 70]]]
+      [
+        2,
+        [
+          ['salbutamol', 1, 35],
+          ['omeprazole', 20, 70]
+        ]
+      ]
     ])
       for (const [key, piecesPerBox, unitCost] of keys)
         packs[`${supplierIndex}:${key}`] = (
@@ -343,10 +363,6 @@ async function seed() {
       db
         .updateTable('purchaseOrders')
         .set({
-          orderNumber: order.orderNumber.replace(
-            /^PO-\d{8}/,
-            `PO-${day(offset).replaceAll('-', '')}`
-          ),
           orderedAt: `${day(offset)} 09:00:00`,
           createdAt: `${day(offset)} 09:00:00`,
           expectedAt: day(offset + 5)
@@ -459,7 +475,14 @@ async function seed() {
       (
         await db
           .selectFrom('batches')
-          .select(['id', 'physicalTag', 'sellPrice', 'boxSellPrice', 'wholesaleBoxPrice', 'piecesPerBox'])
+          .select([
+            'id',
+            'physicalTag',
+            'sellPrice',
+            'boxSellPrice',
+            'wholesaleBoxPrice',
+            'piecesPerBox'
+          ])
           .execute()
       ).map((batch) => [batch.physicalTag, batch])
     )
@@ -473,7 +496,12 @@ async function seed() {
     const boxLine = (tag, quantity, wholesale = false) => {
       const batch = batches[tag]
       const price = wholesale
-        ? wholesaleBoxPrice(batch.sellPrice, batch.boxSellPrice, batch.wholesaleBoxPrice, batch.piecesPerBox)
+        ? wholesaleBoxPrice(
+            batch.sellPrice,
+            batch.boxSellPrice,
+            batch.wholesaleBoxPrice,
+            batch.piecesPerBox
+          )
         : unitSellPrice('box', batch.sellPrice, batch.boxSellPrice, batch.piecesPerBox)
       return { batchId: batch.id, quantity, unit: 'box', unitPriceCents: Math.round(price * 100) }
     }
@@ -526,7 +554,11 @@ async function seed() {
       })
     }
     await sell(null, [line('FVX-2401', 10), line('VTC-2402', 5)])
-    await sell(customers.senior.id, [line('LSD-2408', 30), line('GLD-2409', 14)], rx('RX-DEMO-0001'))
+    await sell(
+      customers.senior.id,
+      [line('LSD-2408', 30), line('GLD-2409', 14)],
+      rx('RX-DEMO-0001')
+    )
     await sell(customers.pwd.id, [line('AMX-2409', 21)], rx('RX-DEMO-0002'))
     await sell(customers.walkIn.id, [line('BRX-2410', 1)], rx(''))
     await sell(null, [boxLine('VTC-2402', 1)])
@@ -618,8 +650,7 @@ if (isEntryPoint && process.env.DEMO_SEED_PHASE) {
         stdio: 'inherit',
         env: {
           ...process.env,
-          DATABASE: target,
-          DATABASE_BACKUP: join(dirname(target), 'pddms-demo-backup.db')
+          DATABASE: target
         }
       }
     )

@@ -13,6 +13,7 @@ import {
   startStockCount
 } from '@renderer/services/controls'
 import type { StockCountDetails, StockCountRecord } from '@shared/controls'
+import { formatId } from '@shared/identifiers'
 import { expiryDateLabel } from '@shared/inventory'
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { FiPrinter } from 'react-icons/fi'
@@ -144,11 +145,11 @@ export default function StockCount({
         <section>
           <h3 className="mb-2 text-sm font-semibold text-slate-800">Counts</h3>
           {counts.length === 0 ? (
-            <p className="text-sm text-slate-500">No stock counts yet.</p>
+            <p className="text-sm text-slate-600">No stock counts yet.</p>
           ) : (
             <div className="overflow-x-auto rounded-md border border-slate-200">
               <table className="w-full min-w-[640px] text-sm">
-                <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                <thead className="bg-slate-50 text-left text-xs text-slate-600">
                   <tr>
                     <th className="px-3 py-2">Count</th>
                     <th className="px-3 py-2">Started</th>
@@ -162,15 +163,15 @@ export default function StockCount({
                   {counts.map((count) => (
                     <tr key={count.id}>
                       <td className="px-3 py-2">
-                        <p className="font-semibold">#{count.id}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="font-semibold">{formatId('stockCount', count.id)}</p>
+                        <p className="text-xs text-slate-600">
                           {count.scope}
                           {count.notes ? ` · ${count.notes}` : ''}
                         </p>
                       </td>
                       <td className="px-3 py-2">
                         {when(count.startedAt)}
-                        <span className="block text-xs text-slate-500">{count.startedByName}</span>
+                        <span className="block text-xs text-slate-600">{count.startedByName}</span>
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {count.countedCount} of {count.lineCount}
@@ -187,7 +188,7 @@ export default function StockCount({
                               : 'Cancelled'}
                         </span>
                         {count.closedByName && (
-                          <span className="block text-xs text-slate-500">
+                          <span className="block text-xs text-slate-600">
                             {count.closedByName}
                             {count.closedAt ? `, ${when(count.closedAt)}` : ''}
                           </span>
@@ -309,7 +310,7 @@ function CountSheet({
   const uncounted = count.lines.filter((line) => entries[line.batchId].counted.trim() === '')
   const complete = async (): Promise<void> => {
     const ok = await confirm({
-      title: `Complete count #${count.id}?`,
+      title: `Complete count ${formatId('stockCount', count.id)}?`,
       message: (
         <>
           <p>
@@ -331,7 +332,7 @@ function CountSheet({
   }
   return (
     <Modal
-      title={`Stock Count #${count.id}`}
+      title={`Stock Count ${formatId('stockCount', count.id)}`}
       description={`${count.scope} · started ${when(count.startedAt)} by ${count.startedByName}${count.notes ? ` · ${count.notes}` : ''}`}
       close={close}
       size="xl"
@@ -366,14 +367,14 @@ function CountSheet({
           >
             <FiPrinter aria-hidden="true" /> Print Count Sheet
           </button>
-          <span className="self-center text-xs text-slate-500">
+          <span className="self-center text-xs text-slate-600">
             {count.lines.length - uncounted.length} of {count.lines.length} counted ·{' '}
             {differences.length} difference(s)
           </span>
         </div>
         <div className="max-h-[55vh] overflow-auto rounded-md border border-slate-200">
           <table className="w-full min-w-[960px] text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs text-slate-500">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs text-slate-600">
               <tr>
                 <th className="px-3 py-2">Product and Batch</th>
                 <th className="px-3 py-2">Expiry</th>
@@ -398,7 +399,7 @@ function CountSheet({
                   <tr key={line.batchId}>
                     <td className="px-3 py-2">
                       <p className="font-medium">{line.productName}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         Batch {line.batchNumber} · boxes of {line.piecesPerBox}
                       </p>
                       {movedSinceCount && (
@@ -434,7 +435,7 @@ function CountSheet({
                       />
                     </td>
                     <td
-                      className={`px-3 py-2 text-right font-semibold tabular-nums ${difference === null || difference === 0 ? 'text-slate-500' : difference > 0 ? 'text-emerald-700' : 'text-rose-700'}`}
+                      className={`px-3 py-2 text-right font-semibold tabular-nums ${difference === null || difference === 0 ? 'text-slate-600' : difference > 0 ? 'text-emerald-700' : 'text-rose-700'}`}
                     >
                       {difference === null
                         ? '—'
@@ -479,7 +480,7 @@ function CountSheet({
               onClick={() =>
                 void (async () => {
                   const ok = await confirm({
-                    title: `Cancel count #${count.id}?`,
+                    title: `Cancel count ${formatId('stockCount', count.id)}?`,
                     message: 'No stock changes. The count is kept in the list as cancelled.',
                     confirmLabel: 'Cancel Count',
                     cancelLabel: 'Keep Counting',

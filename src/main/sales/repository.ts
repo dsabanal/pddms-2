@@ -12,6 +12,7 @@ import {
   type CashCountRecord,
   type VoidSale
 } from '@shared/controls'
+import { batchLabel, formatId } from '@shared/identifiers'
 import { isBatchSellable, localDate } from '@shared/inventory'
 import { dateBounds } from '@shared/reporting'
 import {
@@ -135,7 +136,7 @@ async function prepare(
       drugId: batch.drugId,
       productName: `${batch.brandName} (${batch.genericName}) ${batch.formulation}`,
       category: batch.category,
-      batchNumber: batch.physicalTag ?? `Batch ${batch.id}`,
+      batchNumber: batchLabel(batch),
       expiresAt: String(batch.expiresAt)
     }
   })
@@ -301,12 +302,12 @@ export async function checkout(input: Checkout, accountId: number): Promise<Sale
     }
     const prescription = rx.required.length ? data.prescription : null
     const register = rx.controlled.length ? data.prescription : null
-    const reference = `SALE-${randomUUID().toUpperCase()}`
     const sale = await transaction
       .insertInto('sales')
       .values({
         requestId: data.requestId,
-        reference,
+        // Note: The number is made from the row id (TXN-000123) and set right after the insert.
+        reference: `PENDING-${randomUUID()}`,
         cashierId: accountId,
         cashierName: account.fullName,
         customerId: data.customerId,
@@ -340,6 +341,8 @@ export async function checkout(input: Checkout, accountId: number): Promise<Sale
       })
       .returning('id')
       .executeTakeFirstOrThrow()
+    const reference = formatId('sale', sale.id)
+    await transaction.updateTable('sales').set({ reference }).where('id', '=', sale.id).execute()
     for (const item of prepared.items) {
       await deductBatchStock(
         transaction,
@@ -560,7 +563,7 @@ export async function recordCashCount(
   const previous = preview.previousCountId === null ? undefined : { id: preview.previousCountId }
   if (previous && data.notes.length < 3)
     throw new SalesError(
-      `You already saved a cash count today (#${previous.id}). Say why you are counting again in Notes; the new count replaces it.`
+      `You already saved a cash count today (${formatId('cashCount', previous.id)}). Say why you are counting again in Notes; the new count replaces it.`
     )
   const record = await db
     .insertInto('cashCounts')
@@ -583,7 +586,7 @@ export async function recordCashCount(
     .returningAll()
     .executeTakeFirstOrThrow()
   noteAudit({
-    summary: `${previous ? `Recount (replaces #${previous.id}) ` : ''}Cash count ${preview.businessDate}: counted ${(counted / 100).toFixed(2)}, expected ${(expected / 100).toFixed(2)} (${overShortLabel(counted - expected)} ${(Math.abs(counted - expected) / 100).toFixed(2)})`,
+    summary: `${previous ? `Recount (replaces ${formatId('cashCount', previous.id)}) ` : ''}Cash count ${preview.businessDate}: counted ${(counted / 100).toFixed(2)}, expected ${(expected / 100).toFixed(2)} (${overShortLabel(counted - expected)} ${(Math.abs(counted - expected) / 100).toFixed(2)})`,
     reason: data.notes || undefined
   })
   return toCashCount({ ...record, replacedBy: null })

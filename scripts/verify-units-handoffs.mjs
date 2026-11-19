@@ -164,7 +164,7 @@ if (!process.env.UNITS_TEST_PHASE) {
         invoke(channels.product.createOne, {
           genericName: 'Generic',
           formulation: '500 mg tablet',
-          category: 'Medicine',
+          category: 'Others',
           isPrescribed: false,
           isControlled: false,
           reorderLevel: 5,
@@ -172,7 +172,8 @@ if (!process.env.UNITS_TEST_PHASE) {
         })
       assert.equal((await product({ brandName: 'Old Box Field', piecesPerBox: 10 })).success, false)
       const boxed = (await product({ brandName: 'Boxed Tablet' })).product
-      const loose = (await product({ brandName: 'Loose Syrup', formulation: '60 ml syrup' })).product
+      const loose = (await product({ brandName: 'Loose Syrup', formulation: '60 ml syrup' }))
+        .product
       assert.ok(boxed && loose)
 
       // Purchase orders pick a pack from the supplier price list; quantity and cost are per box.

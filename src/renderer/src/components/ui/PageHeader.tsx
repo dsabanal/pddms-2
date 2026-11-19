@@ -31,7 +31,7 @@ export default function PageHeader({
           {description && <InfoTip label={title}>{description}</InfoTip>}
         </div>
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>
   )
 }
@@ -52,7 +52,7 @@ export function EmptyState({
     <div className="grid min-h-48 place-items-center p-8 text-center">
       <div className="max-w-md">
         <p className="font-medium text-slate-800">{title}</p>
-        {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+        {description && <p className="mt-1 text-sm text-slate-600">{description}</p>}
         {action && <div className="mt-4 flex justify-center">{action}</div>}
       </div>
     </div>

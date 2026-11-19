@@ -15,6 +15,7 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import { mergeCustomers, RequestError } from '@renderer/services/controls'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { customerDetail, type DuplicateMatch } from '@shared/controls'
+import { customerId } from '@shared/identifiers'
 import { localDate } from '@shared/inventory'
 import { newCustomerSchema } from '@shared/schemas'
 import { validationIssues } from '@shared/validation'
@@ -240,7 +241,10 @@ export default function CustomerProfileView({
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <form noValidate onSubmit={save} className="panel space-y-6 p-6 sm:p-7">
               <div className="hero-band -mx-6 -mt-6 rounded-t-xl rounded-b-none sm:-mx-7 sm:-mt-7">
-                <p className="eyebrow">{pharmacy ? 'Pharmacy Client' : 'Customer Details'}</p>
+                <p className="eyebrow">
+                  {pharmacy ? 'Pharmacy Client' : 'Customer Details'}
+                  {!isNew && customer && ` · ${customerId(customer)}`}
+                </p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <h2 className="section-title text-2xl">
                     {isNew
@@ -521,6 +525,7 @@ export default function CustomerProfileView({
                     {date.format(new Date(draft.createdAt))}
                   </p>
                   <h1 className="page-title mt-2 truncate text-2xl">{draft.fullName}</h1>
+                  <p className="id-code id-code-on-dark mt-2">{customerId(draft)}</p>
                   {pharmacy && draft.contactPerson && (
                     <p className="text-brand-100 mt-1 text-sm font-medium">
                       Contact: {draft.contactPerson}
@@ -607,7 +612,7 @@ export default function CustomerProfileView({
                 <header className="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                   <div>
                     <h3 className="section-title">Transaction History</h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-600">
                       Recorded purchases associated with this customer.
                     </p>
                   </div>
@@ -629,7 +634,7 @@ export default function CustomerProfileView({
                       {draft.transactions.map((transaction) => (
                         <tr
                           key={transaction.id}
-                          className={`transition hover:bg-white ${transaction.voided ? 'text-slate-500' : ''}`}
+                          className={`transition hover:bg-white ${transaction.voided ? 'text-slate-600' : ''}`}
                         >
                           <td className="px-5 py-4 font-medium sm:px-6">
                             {transaction.id}
@@ -639,7 +644,7 @@ export default function CustomerProfileView({
                               </span>
                             )}
                           </td>
-                          <td className="px-5 py-4 text-slate-500">
+                          <td className="px-5 py-4 text-slate-600">
                             {date.format(new Date(transaction.purchasedAt))}
                           </td>
                           <td className="px-5 py-4">{transaction.itemCount}</td>
@@ -651,7 +656,7 @@ export default function CustomerProfileView({
                     </tbody>
                   </table>
                   {draft.transactions.length === 0 && (
-                    <p className="p-12 text-center text-sm text-slate-500">
+                    <p className="p-12 text-center text-sm text-slate-600">
                       No transactions recorded.
                     </p>
                   )}

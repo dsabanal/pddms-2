@@ -9,6 +9,7 @@ import { completeSale, getSale, getSaleHistory } from '@renderer/services/sales'
 import { useProfileStore } from '@renderer/stores/useProfileStore'
 import { customerDetail } from '@shared/controls'
 import { phoneKey } from '@shared/duplicates'
+import { formatId, matchesId } from '@shared/identifiers'
 import {
   expiryDateLabel,
   expiryLabels,
@@ -154,15 +155,20 @@ export default function SalesWorkspace(): ReactElement {
   }, [])
   const matches = useMemo(() => {
     const terms = query.toLowerCase().trim().split(/\s+/)
-    return products.filter((product) =>
-      terms.every((term) =>
-        `${product.brandName} ${product.genericName} ${product.formulation} ${product.category}`
-          .toLowerCase()
-          .includes(term)
-      )
+    return products.filter(
+      (product) =>
+        matchesId(query, 'product', product.id) ||
+        terms.every((term) =>
+          `${formatId('product', product.id)} ${product.brandName} ${product.genericName} ${product.formulation} ${product.category}`
+            .toLowerCase()
+            .includes(term)
+        )
     )
   }, [products, query])
-  const product = products.find((item) => item.id === selected)
+  // Note: When the search narrows to one medicine, its batches open without another click.
+  const onlyMatch = query.trim() && matches.length === 1 ? matches[0].id : null
+  const shown = onlyMatch ?? selected
+  const product = products.find((item) => item.id === shown)
   const walkInCheck = walkIn ? walkInDiscountSchema.safeParse(walkIn) : null
   const walkInErrors = Object.fromEntries(
     (walkInCheck?.error?.issues ?? []).map((issue) => [String(issue.path[0]), issue.message])
@@ -452,7 +458,7 @@ export default function SalesWorkspace(): ReactElement {
         {history ? (
           <section className="panel space-y-3 p-5">
             <h3 className="section-title">Transactions</h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               Newest first · {account?.role === 'master' ? 'All cashiers' : 'Your sales only'}. A
               sale of today rung up wrong can be voided before the drawer is counted; it is left out
               of totals.{' '}
@@ -474,7 +480,7 @@ export default function SalesWorkspace(): ReactElement {
                 <tbody>
                   {history.map((sale) => (
                     <tr
-                      className={`border-t border-slate-100 ${sale.status === 'voided' ? 'bg-slate-50 text-slate-500' : ''}`}
+                      className={`border-t border-slate-100 ${sale.status === 'voided' ? 'bg-slate-50 text-slate-600' : ''}`}
                       key={sale.id}
                     >
                       <td className="max-w-64 p-3 break-all">
@@ -498,7 +504,7 @@ export default function SalesWorkspace(): ReactElement {
                       <td className="p-3">
                         {sale.customerName}
                         {sale.discountType !== 'none' && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-600">
                             {sale.discountType === 'senior' ? 'Senior' : 'PWD'} ID {sale.discountId}
                             {sale.customerId === null ? ' · walk-in' : ''}
                           </p>
@@ -578,7 +584,15 @@ export default function SalesWorkspace(): ReactElement {
                     className="field pl-10"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Brand, generic name, category or formulation"
+                    onKeyDown={(event) => {
+                      // Note: Enter opens the first match, so a cashier can type and press Enter
+                      // instead of reaching for the mouse.
+                      if (event.key === 'Enter' && query.trim() && matches[0]) {
+                        event.preventDefault()
+                        setSelected(matches[0].id)
+                      }
+                    }}
+                    placeholder="Type a medicine name, then press Enter"
                   />
                 </span>
               </label>
@@ -587,15 +601,15 @@ export default function SalesWorkspace(): ReactElement {
                 {matches.map((item) => (
                   <button
                     key={item.id}
-                    aria-pressed={selected === item.id}
-                    className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-md border p-3 text-left transition-colors ${selected === item.id ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'}`}
+                    aria-pressed={shown === item.id}
+                    className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-md border p-3 text-left transition-colors ${shown === item.id ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'}`}
                     onClick={() => setSelected(item.id)}
                   >
                     <span className="min-w-0">
                       <span className="block font-semibold break-words text-slate-900">
                         {item.brandName}
                       </span>
-                      <span className="block text-sm text-slate-500">
+                      <span className="block text-sm text-slate-600">
                         {item.genericName} · {item.formulation} · {item.category}
                       </span>
                     </span>
@@ -672,7 +686,7 @@ export default function SalesWorkspace(): ReactElement {
                           </span>
                         </p>
                         <p
-                          className={`text-sm font-medium ${!isBatchSellable(batch.stock, batch.expiresAt) ? 'text-rose-700' : getExpiryStatus(batch.expiresAt) === 'near-expiry' ? 'text-amber-700' : 'text-slate-500'}`}
+                          className={`text-sm font-medium ${!isBatchSellable(batch.stock, batch.expiresAt) ? 'text-rose-700' : getExpiryStatus(batch.expiresAt) === 'near-expiry' ? 'text-amber-700' : 'text-slate-600'}`}
                         >
                           {expiryLabels[getExpiryStatus(batch.expiresAt)]}
                         </p>
@@ -704,7 +718,7 @@ export default function SalesWorkspace(): ReactElement {
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-600">
                   Select a product to view batch, expiry, and price details.
                 </p>
               )}
@@ -721,7 +735,7 @@ export default function SalesWorkspace(): ReactElement {
                 </div>
               </div>
               {!cart.length && (
-                <p className="text-sm text-slate-500">Add a product to start a transaction.</p>
+                <p className="text-sm text-slate-600">Add a product to start a transaction.</p>
               )}
               <div className="max-h-80 space-y-3 overflow-auto">
                 {cart.map((line) => {
@@ -738,19 +752,19 @@ export default function SalesWorkspace(): ReactElement {
                       <div className="flex items-start justify-between gap-3">
                         <p className="min-w-0 font-semibold break-words text-slate-900">
                           {item?.brandName ?? 'Unavailable product'}
-                          <span className="block text-xs font-normal text-slate-500">
+                          <span className="block text-xs font-normal text-slate-600">
                             Batch {batch?.batchNumber}
                           </span>
                         </p>
                         <button
                           type="button"
-                          className="icon-button size-9"
+                          className="secondary-button px-2.5 text-rose-700"
                           aria-label={`Remove ${item?.brandName ?? 'item'} from the cart`}
                           title="Remove from Cart"
                           disabled={busy}
                           onClick={() => setCart(removeCartItem(cart, cartKey(line)))}
                         >
-                          <FiTrash2 aria-hidden="true" />
+                          <FiTrash2 aria-hidden="true" /> Remove
                         </button>
                       </div>
                       {/* Note: Labels sit above fixed-width inputs and the price has its own
@@ -807,7 +821,7 @@ export default function SalesWorkspace(): ReactElement {
                           </p>
                         )}
                         <p className="col-span-2 text-right sm:col-span-1">
-                          <span className="block text-xs text-slate-500">
+                          <span className="block text-xs text-slate-600">
                             {money(line.unitPriceCents)} per {unitWord(line.unit, piecesPerBox)}
                           </span>
                           <span className="block text-base font-bold text-slate-900 tabular-nums">
@@ -887,7 +901,7 @@ export default function SalesWorkspace(): ReactElement {
                   ))}
                 </select>
                 {customerQuery && (
-                  <p className="text-xs text-slate-500" role="status">
+                  <p className="text-xs text-slate-600" role="status">
                     {shownCustomers.length} matching customer
                     {shownCustomers.length === 1 ? '' : 's'}. Customers with the same name are told
                     apart by mobile number or ID.
@@ -899,7 +913,7 @@ export default function SalesWorkspace(): ReactElement {
                   <legend className="px-1 text-sm font-bold">
                     Walk-in Senior Citizen / PWD ID
                   </legend>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600">
                     Check the physical ID. The name, ID number and expiry are saved with this sale
                     and printed on the receipt.
                   </p>

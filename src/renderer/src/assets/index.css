@@ -24,9 +24,15 @@
   --color-sidebar-900: #073a3e;
   --color-sidebar-800: #0d4b50;
   --color-canvas: #f1f5f5;
-  /* Note: Small print (hints, badges, table headers) is 13px rather than 12px, for legibility. */
-  --text-xs: 0.8125rem;
-  --text-xs--line-height: 1.4;
+  /*
+   * Note: Post-defense readability pass for older users. The smallest print (hints, badges, table
+   * headers) is 14px and ordinary small text is 15px; body text is 16px. Every size is in rem, so
+   * the Text size buttons (A, A+, A++) scale the whole app together.
+   */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
 }
 
 @layer base {
@@ -35,7 +41,7 @@
   }
 
   body {
-    @apply bg-canvas m-0 min-h-screen text-[15px] leading-normal text-slate-900 antialiased;
+    @apply bg-canvas m-0 min-h-screen text-base leading-normal text-slate-900 antialiased;
   }
 
   ::selection {
@@ -48,7 +54,7 @@
   select,
   textarea,
   [tabindex] {
-    @apply focus-visible:outline-brand-500 focus-visible:outline-2 focus-visible:outline-offset-2;
+    @apply focus-visible:outline-brand-600 focus-visible:outline-3 focus-visible:outline-offset-2;
   }
 
   table {
@@ -158,7 +164,7 @@
 
   /* Info "i" button: holds a section's or field's explanation instead of a paragraph of text. */
   .info-tip-button {
-    @apply hover:text-brand-700 hover:bg-brand-50 aria-expanded:text-brand-700 aria-expanded:bg-brand-50 inline-grid size-6 shrink-0 cursor-help place-items-center rounded-full text-[1rem] text-slate-500 transition-colors;
+    @apply hover:text-brand-700 hover:bg-brand-50 aria-expanded:text-brand-700 aria-expanded:bg-brand-50 inline-grid size-8 shrink-0 cursor-help place-items-center rounded-full text-[1.125rem] text-slate-600 transition-colors;
   }
 
   .info-tip-bubble {
@@ -188,7 +194,7 @@
 
   /* Forms */
   .field {
-    @apply focus:border-brand-500 focus:ring-brand-100 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition outline-none placeholder:text-slate-500 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+    @apply focus:border-brand-500 focus:ring-brand-100 min-h-11 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-base text-slate-900 transition outline-none placeholder:text-slate-500 read-only:bg-slate-50 focus:ring-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
   }
 
   .field:hover:not(:disabled, :focus, [aria-invalid='true']) {
@@ -206,19 +212,19 @@
 
   /* Buttons */
   .primary-button {
-    @apply bg-brand-700 hover:bg-brand-800 active:bg-brand-900 focus-visible:ring-brand-300 inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply bg-brand-700 hover:bg-brand-800 active:bg-brand-900 focus-visible:ring-brand-300 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-semibold text-white shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2;
   }
 
   .secondary-button {
-    @apply focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 active:bg-slate-100;
+    @apply focus-visible:ring-brand-200 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-400 bg-white px-3.5 py-2 text-base font-semibold text-slate-800 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 active:bg-slate-100;
   }
 
   .danger-button {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-300 bg-white px-3.5 text-sm font-medium text-rose-700 transition-colors hover:border-rose-400 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-200;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-rose-400 bg-white px-3.5 py-2 text-base font-semibold text-rose-700 transition-colors hover:border-rose-400 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-200;
   }
 
   .icon-button {
-    @apply focus-visible:ring-brand-200 grid size-10 shrink-0 place-items-center rounded-lg border border-slate-300 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2;
+    @apply focus-visible:ring-brand-200 grid size-11 shrink-0 place-items-center rounded-lg border border-slate-400 bg-white text-lg text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2;
   }
 
   .primary-button,
@@ -232,7 +238,7 @@
   .table-surface thead,
   .panel thead,
   .data-table thead {
-    @apply bg-slate-50 text-xs font-semibold tracking-wide text-slate-600 uppercase;
+    @apply bg-slate-100 text-sm font-semibold text-slate-700;
   }
 
   .table-surface thead th,
@@ -311,6 +317,20 @@
     @apply relative flex min-w-0 flex-col rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)];
   }
 
+  /*
+   * Key figures shrink to fit their tile instead of breaking a number across two lines, so
+   * "₱2,270.00" stays whole at every text size.
+   */
+  .stat-tile,
+  .metric-card {
+    container-type: inline-size;
+  }
+
+  .fit-figure {
+    white-space: nowrap;
+    font-size: clamp(1.125rem, 13cqi, 2rem) !important;
+  }
+
   .stat-tile-label {
     @apply text-sm font-medium text-slate-600;
   }
@@ -321,7 +341,7 @@
 
   /* Sign-in and first-launch setup */
   .setup-stage {
-    @apply bg-sidebar-950 grid min-h-screen place-items-center px-5 py-10 text-slate-900;
+    @apply bg-sidebar-950 relative grid min-h-screen place-items-center px-5 pt-20 pb-10 text-slate-900;
     background-image:
       radial-gradient(40rem 28rem at 85% -10%, rgb(20 184 166 / 0.28), transparent 70%),
       radial-gradient(36rem 26rem at 0% 110%, rgb(13 75 80 / 0.9), transparent 70%);
@@ -329,5 +349,42 @@
 
   .setup-frame {
     @apply relative w-full max-w-md rounded-2xl border border-white/10 bg-white p-7 shadow-2xl shadow-black/30 sm:p-9;
+  }
+
+  /*
+   * Generated identifier (MED-000012, TXN-000123): monospace so digits line up and read clearly.
+   */
+  .id-code {
+    @apply inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold tracking-wide text-slate-700;
+  }
+
+  .id-code-on-dark {
+    @apply text-brand-50 bg-white/15;
+  }
+
+  /* Text size buttons (A, A+, A++) in the top bar and on the sign-in screen. */
+  .text-size-control {
+    @apply inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-1;
+  }
+
+  .text-size-label {
+    @apply hidden px-1.5 text-sm font-medium text-slate-700 md:inline;
+  }
+
+  .text-size-option {
+    @apply hover:bg-brand-50 aria-pressed:bg-brand-700 grid min-h-9 min-w-10 place-items-center rounded-md px-2 text-sm font-bold text-slate-800 transition-colors aria-pressed:text-white;
+  }
+
+  .text-size-control-dark {
+    @apply border-white/20 bg-white/10;
+  }
+
+  .text-size-control-dark .text-size-label,
+  .text-size-control-dark .text-size-option {
+    @apply text-white;
+  }
+
+  .text-size-control-dark .text-size-option {
+    @apply aria-pressed:text-brand-900 hover:bg-white/15 aria-pressed:bg-white;
   }
 }

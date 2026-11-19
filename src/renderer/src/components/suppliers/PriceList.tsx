@@ -113,7 +113,7 @@ export default function PriceList({
               : 'Costs per box agreed with each supplier. Purchase orders use these prices; only the administrator can change them. If an invoice shows a different price, record it when receiving.'
           }
         />
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
@@ -162,7 +162,7 @@ export default function PriceList({
                       <td className="px-3 py-2 whitespace-nowrap">{showDate(row.deliveredAt)}</td>
                       <td className="px-3 py-2">
                         {row.supplierName}
-                        <p className="text-xs break-all text-slate-500">{row.orderNumber}</p>
+                        <p className="text-xs break-all text-slate-600">{row.orderNumber}</p>
                       </td>
                       <td className="px-3 py-2">{row.productName}</td>
                       <td className="px-3 py-2 text-right tabular-nums">
@@ -211,7 +211,7 @@ export default function PriceList({
       )}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] text-sm">
-          <thead className="surface-header text-left text-slate-500">
+          <thead className="surface-header text-left text-slate-600">
             <tr>
               <th className="py-3 pr-5 pl-9">Product</th>
               <th className="px-5 py-3">Pack</th>
@@ -316,7 +316,7 @@ function PackRow({
 }): ReactElement {
   return (
     <>
-      <tr className={pack.isArchived ? 'text-slate-500' : 'hover:bg-brand-50/50'}>
+      <tr className={pack.isArchived ? 'text-slate-600' : 'hover:bg-brand-50/50'}>
         <td className="py-3 pr-5 pl-9">
           <p className="font-medium text-slate-900">{pack.productName}</p>
           {pack.isArchived && (
@@ -332,7 +332,7 @@ function PackRow({
           {pack.current ? (
             <>
               <span className="font-semibold">{currency.format(pack.current.unitCost)}</span>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {currency.format(pack.current.unitCost / pack.piecesPerBox)} per piece
               </p>
             </>
@@ -359,13 +359,13 @@ function PackRow({
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              className="icon-button"
+              className="secondary-button h-9 text-xs whitespace-nowrap"
               aria-expanded={open}
               aria-label={`Price history of ${pack.productName}, box of ${pack.piecesPerBox}`}
               title="Price History"
               onClick={toggleHistory}
             >
-              <FiClock />
+              <FiClock aria-hidden="true" /> History
             </button>
             {canEdit && !pack.isArchived && (
               <button
@@ -379,12 +379,20 @@ function PackRow({
             {canEdit && (
               <button
                 type="button"
-                className="icon-button"
+                className="secondary-button h-9 text-xs whitespace-nowrap"
                 aria-label={`${pack.isArchived ? 'Restore' : 'Remove'} ${pack.productName}, box of ${pack.piecesPerBox}`}
                 title={pack.isArchived ? 'Put Back on the List' : 'Remove from New Orders'}
                 onClick={toggleArchive}
               >
-                {pack.isArchived ? <FiRotateCcw /> : <FiArchive />}
+                {pack.isArchived ? (
+                  <>
+                    <FiRotateCcw aria-hidden="true" /> Restore
+                  </>
+                ) : (
+                  <>
+                    <FiArchive aria-hidden="true" /> Remove
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -401,7 +409,7 @@ function PackRow({
                     {currency.format(price.unitCost)}
                   </span>
                   <span>from {showDate(price.effectiveFrom)}</span>
-                  <span className="text-slate-500">
+                  <span className="text-slate-600">
                     {price.quotationReference ?? 'No quotation number'} · recorded by{' '}
                     {price.recordedByName ?? 'system (carried over)'}
                   </span>

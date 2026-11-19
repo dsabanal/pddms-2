@@ -1,4 +1,5 @@
 import z from 'zod'
+import { formatId } from './identifiers'
 import { localDate } from './inventory'
 import {
   barcodeSvg,
@@ -182,9 +183,9 @@ export function receivable(
     deadlineStatus: remainingCents === 0 ? 'paid' : dueDate < today ? 'overdue' : 'upcoming'
   }
 }
-/** Short delivery receipt number, e.g. DR00000012. The full order reference is printed too. */
+/** Delivery receipt number for a wholesale order, e.g. DR-000012 for order WO-000012. */
 export const deliveryReceiptNumber = (order: Pick<WholesaleOrder, 'id'>): string =>
-  `DR${String(order.id).padStart(8, '0')}`
+  formatId('deliveryReceipt', order.id)
 
 export interface DeliveryReceiptModel {
   number: string
@@ -253,8 +254,8 @@ export function deliveryReceiptText(order: WholesaleDetails): string {
     center(businessTin),
     center('DELIVERY RECEIPT'),
     dashed,
-    pad(`DR NO: ${model.number}`, `ORDER: ${model.orderDate}`),
-    wrap(`REF: ${model.reference}`),
+    pad(`DR NO: ${model.number}`, `DATE: ${model.orderDate}`),
+    wrap(`ORDER NO: ${model.reference}`),
     pad(`DELIVERED: ${model.deliveredDate}`, model.deliveredTime),
     dashed,
     wrap(`CLIENT: ${model.client}`),
@@ -272,7 +273,11 @@ export function deliveryReceiptText(order: WholesaleDetails): string {
     dashed,
     wrap(`Delivery notes: ${model.notes}`),
     ...model.handlers.map((row) => wrap(`${row.label}: ${row.value}`)),
-    ...model.signatures.flatMap((row) => ['', wrap(`${row.label}: ${row.name}`), 'Signature: ____________________']),
+    ...model.signatures.flatMap((row) => [
+      '',
+      wrap(`${row.label}: ${row.name}`),
+      'Signature: ____________________'
+    ]),
     dashed,
     center(`*${model.number}*`),
     center('Proof of delivery. Not an official receipt.')
@@ -290,8 +295,8 @@ ${receiptCss}
 </style></head><body>
 <div class="center"><div class="logo">+</div><div class="name">${escapeHtml(business.name)}</div><div>${escapeHtml(business.address)}</div><div>${escapeHtml(businessContact)}</div><div>${escapeHtml(businessTin)}</div><div><b>DELIVERY RECEIPT</b></div></div>
 <div class="rule"></div>
-${row(`DR NO: ${model.number}`, `ORDER: ${model.orderDate}`)}
-<div class="wrap muted">REF: ${escapeHtml(model.reference)}</div>
+${row(`DR NO: ${model.number}`, `DATE: ${model.orderDate}`)}
+<div class="wrap muted">ORDER NO: ${escapeHtml(model.reference)}</div>
 ${row(`DELIVERED: ${model.deliveredDate}`, model.deliveredTime)}
 <div class="rule"></div>
 <div>CLIENT: ${escapeHtml(model.client)}</div>

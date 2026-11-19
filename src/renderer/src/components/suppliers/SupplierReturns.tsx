@@ -11,6 +11,7 @@ import {
   recordSupplierReturn
 } from '@renderer/services/controls'
 import type { CreditNoteRecord, SupplierReturnRecord } from '@shared/controls'
+import { formatId } from '@shared/identifiers'
 import { filterInput } from '@shared/inputRules'
 import { localDate } from '@shared/inventory'
 import { supplierReturnReasons, type SupplierReturnReason } from '@shared/types'
@@ -71,7 +72,7 @@ export default function SupplierReturns({
   const shownReturns = returns.filter(
     (item) =>
       !term ||
-      `${item.supplierName} ${item.productName} ${item.batchNumber} ${item.creditNoteNumber ?? ''}`
+      `${formatId('supplierReturn', item.id)} ${item.supplierName} ${item.productName} ${item.batchNumber} ${item.creditNoteNumber ?? ''}`
         .toLowerCase()
         .includes(term)
   )
@@ -123,7 +124,7 @@ export default function SupplierReturns({
         ) : (
           <div className="overflow-x-auto rounded-md border border-slate-200">
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="bg-slate-50 text-left text-xs text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs text-slate-600">
                 <tr>
                   <th className="px-3 py-2">Credit Note</th>
                   <th className="px-3 py-2">Supplier</th>
@@ -138,7 +139,7 @@ export default function SupplierReturns({
                   <tr key={credit.id}>
                     <td className="px-3 py-2">
                       <p className="font-semibold">{credit.creditNoteNumber}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         {showDate(credit.issuedAt)} · {credit.recordedByName}
                       </p>
                     </td>
@@ -151,7 +152,7 @@ export default function SupplierReturns({
                         <>
                           {credit.orderNumber}
                           {credit.appliedAt && (
-                            <span className="block text-xs text-slate-500">
+                            <span className="block text-xs text-slate-600">
                               {showDate(credit.appliedAt)}
                             </span>
                           )}
@@ -167,7 +168,7 @@ export default function SupplierReturns({
                         ? `${credit.returnCount} return${credit.returnCount === 1 ? '' : 's'}`
                         : 'No linked return'}
                       {credit.notes && (
-                        <span className="block text-xs text-slate-500">{credit.notes}</span>
+                        <span className="block text-xs text-slate-600">{credit.notes}</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -200,8 +201,9 @@ export default function SupplierReturns({
         ) : (
           <div className="overflow-x-auto rounded-md border border-slate-200">
             <table className="w-full min-w-[820px] text-sm">
-              <thead className="bg-slate-50 text-left text-xs text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs text-slate-600">
                 <tr>
+                  <th className="px-3 py-2">Return No.</th>
                   <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Product and Batch</th>
                   <th className="px-3 py-2">Supplier</th>
@@ -214,10 +216,13 @@ export default function SupplierReturns({
               <tbody className="divide-y divide-slate-100">
                 {shownReturns.map((item) => (
                   <tr key={item.id}>
+                    <td className="px-3 py-2 font-mono whitespace-nowrap">
+                      {formatId('supplierReturn', item.id)}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap">{showDate(item.returnedAt)}</td>
                     <td className="px-3 py-2">
                       <p className="font-medium">{item.productName}</p>
-                      <p className="text-xs text-slate-500">Batch {item.batchNumber}</p>
+                      <p className="text-xs text-slate-600">Batch {item.batchNumber}</p>
                     </td>
                     <td className="px-3 py-2">{item.supplierName}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{item.quantity}</td>
@@ -227,7 +232,7 @@ export default function SupplierReturns({
                     <td className="px-3 py-2">
                       {supplierReturnReasons[item.reasonCode]}
                       {item.notes && (
-                        <span className="block text-xs text-slate-500">{item.notes}</span>
+                        <span className="block text-xs text-slate-600">{item.notes}</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
@@ -597,7 +602,7 @@ function CreditNoteDialog({
           <fieldset className="rounded-md border border-slate-200 p-3">
             <legend className="px-1 text-sm font-semibold">Returns This Credit Covers</legend>
             {open.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-600">
                 No returns to this supplier are waiting for a credit note.
               </p>
             ) : (

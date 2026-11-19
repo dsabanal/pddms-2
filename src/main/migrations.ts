@@ -23,6 +23,7 @@ import { up as pharmacyClientsAccountEmail } from '../../migrations/178900130000
 import { up as qaFixesPaymentsPrices } from '../../migrations/1789001400000_qa_fixes_payments_prices'
 import { up as fixListControls } from '../../migrations/1789001500000_fix_list_controls'
 import { up as secondQaFixes } from '../../migrations/1789001600000_second_qa_fixes'
+import { up as postDefenseRevisions } from '../../migrations/1789001700000_post_defense_revisions'
 
 export async function initializeDatabase(): Promise<void> {
   await migrate(db)
@@ -57,4 +58,5 @@ export async function migrate(db: Kysely<Database>): Promise<void> {
   await qaFixesPaymentsPrices(db)
   await fixListControls(db)
   await secondQaFixes(db)
+  await postDefenseRevisions(db)
 }
